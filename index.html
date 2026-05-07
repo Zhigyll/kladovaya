@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Игровой отчёт</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            padding: 40px 24px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #a855f7 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.6);
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header h2 i {
+            color: #a855f7;
+            font-size: 1.3rem;
+        }
+
+        .badge {
+            background: rgba(168, 85, 247, 0.2);
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            color: #c084fc;
+            font-weight: 500;
+        }
+
+        .players-list, .games-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .player-item, .game-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 16px;
+            transition: all 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .player-item:hover, .game-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        .player-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .player-fields input {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            cursor: pointer;
+        }
+
+        .radio-group input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #a855f7;
+        }
+
+        .modern-input, input, select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 10px 16px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .modern-input:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+        }
+
+        .modern-input::placeholder, input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #2d2a3e;
+            border-radius: 16px;
+            margin-top: 8px;
+            z-index: 100;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: #e2e8f0;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(168, 85, 247, 0.3);
+        }
+
+        .rounds-list {
+            margin-top: 20px;
+        }
+
+        .round-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .round-title {
+            font-weight: 600;
+            color: #c084fc;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-point-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .player-point-row:last-child {
+            border-bottom: none;
+        }
+
+        .player-name {
+            font-weight: 500;
+            color: white;
+            min-width: 120px;
+        }
+
+        .player-point-row select, .player-point-row input {
+            width: 100px;
+            text-align: center;
+        }
+
+        .round-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .report-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 16px;
+            color: #e2e8f0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .report-textarea:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #a855f7;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 16px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .player-fields {
+                flex-direction: column;
+            }
+            .radio-group {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1><i class="fas fa-gamepad"></i> Игровой отчёт</h1>
+                <p>Управление игроками, играми и генерация отчётов</p>
+            </div>
+
+            <div class="grid">
+                <!-- Блок игроков -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-users"></i> Игроки</h2>
+                        <span class="badge">{{ players.length }} чел.</span>
+                    </div>
+                    <div class="players-list">
+                        <div v-for="(player, index) in players" :key="player.id" class="player-item">
+                            <div class="player-fields">
+                                <input v-model="player.name" placeholder="Имя игрока" class="modern-input">
+                                <input v-model="player.playerId" placeholder="ID игрока" class="modern-input">
+                            </div>
+                            <div class="radio-group">
+                                <label><input type="radio" v-model="player.type" value="kitten"> 🐱 Котёнок</label>
+                                <label><input type="radio" v-model="player.type" value="bs"> ⭐ БС</label>
+                                <label><input type="radio" v-model="player.type" value="is"> 🔄 ИС</label>
+                                <label><input type="radio" v-model="player.type" value="adult"> 🦁 Взрослый</label>
+                            </div>
+                            <div style="margin-top: 12px; text-align: right;">
+                                <button @click="removePlayer(index)" class="btn btn-danger btn-sm" :disabled="players.length === 1">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="addPlayer" class="btn btn-primary btn-block">
+                        <i class="fas fa-plus"></i> Добавить игрока
+                    </button>
+                </div>
+
+                <!-- Блок игр -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-dice-d6"></i> Игры</h2>
+                        <span class="badge">{{ gameSessions.length }} сессий</span>
+                    </div>
+                    <div class="games-list">
+                        <div v-for="(gameSession, idx) in gameSessions" :key="gameSession.id" class="game-item">
+                            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                                <div class="search-container" style="flex: 1;">
+                                    <input 
+                                        v-model="gameSession.searchQuery" 
+                                        @input="filterGames(idx)"
+                                        @focus="gameSession.showSuggestions = true"
+                                        placeholder="Поиск игры..."
+                                        class="modern-input"
+                                        style="width: 100%;"
+                                    >
+                                    <div v-if="gameSession.showSuggestions && gameSession.filteredGames.length" class="suggestions">
+                                        <div 
+                                            v-for="game in gameSession.filteredGames" 
+                                            :key="game.name"
+                                            @click="selectGame(idx, game)"
+                                            class="suggestion-item"
+                                        >
+                                            <i class="fas fa-gamepad"></i> {{ game.name }} ({{ game.rounds }} раундов)
+                                            <span v-if="game.oncePerHour" style="font-size: 10px; color: #c084fc;"> ⏱️ 1 раз в 1.5ч</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Раунды -->
+                            <div v-if="gameSession.selectedGame" class="rounds-list">
+                                <div v-for="(round, roundIndex) in gameSession.rounds" :key="roundIndex" class="round-card">
+                                    <div class="round-title">
+                                        <i class="fas fa-circle"></i> Раунд {{ roundIndex + 1 }}
+                                    </div>
+                                    <div v-for="player in filteredPlayers(gameSession)" :key="player.id" class="player-point-row">
+                                        <span class="player-name"><i class="fas fa-user"></i> {{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
+                                        <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" 
+                                                v-model="round.points[player.id]">
+                                            <option :value="null">—</option>
+                                            <option v-for="point in gameSession.selectedGame.points" :key="point" :value="point">
+                                                {{ point }}
+                                            </option>
+                                            <option value="0">0</option>
+                                        </select>
+                                        <input v-else type="number" v-model.number="round.points[player.id]" placeholder="Баллы" class="modern-input" style="width: 100px;">
+                                    </div>
+                                </div>
+                                <div class="round-buttons">
+                                    <button @click="addRound(idx)" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Раунд</button>
+                                    <button @click="addCustomRounds(idx)" class="btn btn-secondary btn-sm"><i class="fas fa-layer-group"></i> + Несколько</button>
+                                    <button @click="removeRound(idx)" class="btn btn-danger btn-sm" :disabled="gameSession.rounds.length === 1"><i class="fas fa-minus"></i> Удалить</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="addGameSession" class="btn btn-primary btn-block" style="margin-top: 8px;">
+                        <i class="fas fa-plus-circle"></i> Добавить игру
+                    </button>
+                </div>
+
+                <!-- Блок отчёта -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> Отчёт об играх</h2>
+                        <span class="badge">Автообновление</span>
+                    </div>
+                    <textarea v-model="gameReport" class="report-textarea" rows="14" readonly></textarea>
+                    <button @click="copyReport" class="btn btn-primary btn-block" style="margin-top: 16px;">
+                        <i class="fas fa-copy"></i> Копировать отчёт
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        // Полная база игр
+        const games = [
+            { name: "Путаница", solo: false, adults: true, points: [2, 1], rounds: 5 },
+            { name: "Догонялки", solo: false, adults: false, points: [7, 3], rounds: 3 },
+            { name: "Викторина", solo: false, adults: true, points: [4, 2], rounds: 5 },
+            { name: "Котячий патруль", solo: true, adults: true, points: [20, 15, 7], rounds: 1, oncePerHour: true },
+            { name: "Поле чудес", solo: false, adults: true, points: [10, 5], rounds: 3 },
+            { name: "Липучки", solo: false, adults: false, points: [4, 2], rounds: 3 },
+            { name: "Составь слово", solo: false, adults: false, points: [4, 2], rounds: 5 },
+            { name: "Расшифруй", solo: true, adults: true, points: [], rounds: 5 },
+            { name: "Займи клетку", solo: false, adults: true, points: [5, 3], rounds: 5 },
+            { name: "Погоня", solo: false, adults: false, points: [5, 2], rounds: 3 },
+            { name: "Облом", solo: false, adults: false, points: [4, 1], rounds: 5 },
+            { name: "Лабиринт", solo: true, adults: true, points: [5, 3, 1], rounds: 3 },
+            { name: "Охота на бабочек", solo: true, adults: false, points: [], rounds: 1, oncePerHour: true },
+            { name: "Три буквы", solo: false, adults: true, points: [3, 1], rounds: 5 },
+            { name: "Клановое имя", solo: true, adults: true, points: [3], rounds: 5 },
+            { name: "Цель", solo: true, adults: false, points: [5, 3, 1], rounds: 3 },
+            { name: "Словарик", solo: true, adults: false, points: [4], rounds: 5 },
+            { name: "Песочница", solo: true, adults: true, points: [], rounds: 1, oncePerHour: true },
+            { name: "Три факта", solo: false, adults: true, points: [5, 3], rounds: 3 },
+            { name: "Дай Пять", solo: false, adults: true, points: [15, 7], rounds: 3, oncePerHour: true },
+            { name: "Кладоискатели", solo: true, adults: true, points: [20, 10], rounds: 1, oncePerHour: true },
+            { name: "Считалочка", solo: false, adults: true, points: [5, 3], rounds: 5 },
+            { name: "Букварь", solo: false, adults: true, points: [4], rounds: 5 }
+        ];
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function createGameSession() {
+            return {
+                id: generateId(),
+                searchQuery: '',
+                selectedGame: null,
+                filteredGames: [],
+                showSuggestions: false,
+                rounds: []
+            };
+        }
+
+        createApp({
+            setup() {
+                const players = ref([]);
+                const gameSessions = ref([createGameSession()]);
+
+                const gameReport = computed(() => {
+                    const lines = [];
+                    
+                    const now = new Date();
+                    const dateStr = `${now.getDate().toString().padStart(2, '0')}.${(now.getMonth() + 1).toString().padStart(2, '0')}.${now.getFullYear().toString().slice(-2)}`;
+                    
+                    lines.push(`Следил: ID следящего | [catID]`);
+                    lines.push(`Игровик: ID Игровика | [catID]`);
+                    lines.push(`Время: время начала игр - время конца игр; ${dateStr}`);
+                    
+                    const gameLines = [];
+                    gameSessions.value.forEach(session => {
+                        if (session.selectedGame) {
+                            const minRounds = session.selectedGame.rounds;
+                            const playedRounds = session.rounds.length;
+                            const gameCount = Math.floor(playedRounds / minRounds);
+                            if (gameCount > 0) {
+                                gameLines.push(`${session.selectedGame.name} (${gameCount})`);
+                            }
+                        }
+                    });
+                    lines.push(`Игра: ${gameLines.join(', ')}`);
+                    lines.push(`Котята:`);
+                    
+                    const kittenPoints = {};
+                    
+                    gameSessions.value.forEach(session => {
+                        if (session.selectedGame) {
+                            session.rounds.forEach(round => {
+                                const adultPlayersInRound = players.value.filter(p => p.type === 'adult' && round.points[p.id] > 0);
+                                const kittenPlayersInRound = players.value.filter(p => (p.type === 'kitten' || p.type === 'bs' || p.type === 'is') && round.points[p.id] > 0);
+                                
+                                if (adultPlayersInRound.length > 0 && kittenPlayersInRound.length > 0) {
+                                    adultPlayersInRound.forEach(adult => {
+                                        const pointsToDistribute = round.points[adult.id] || 0;
+                                        const pointsPerKitten = Math.floor(pointsToDistribute / kittenPlayersInRound.length);
+                                        kittenPlayersInRound.forEach(kitten => {
+                                            kittenPoints[kitten.id] = (kittenPoints[kitten.id] || 0) + pointsPerKitten;
+                                        });
+                                    });
+                                }
+                                
+                                players.value.forEach(player => {
+                                    if (player.type !== 'adult' || kittenPlayersInRound.length === 0) {
+                                        const points = round.points[player.id] || 0;
+                                        if (player.type !== 'adult') {
+                                            kittenPoints[player.id] = (kittenPoints[player.id] || 0) + points;
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                    });
+                    
+                    players.value.forEach(player => {
+                        if (player.type !== 'adult') {
+                            const totalPoints = kittenPoints[player.id] || 0;
+                            const catID = player.playerId ? `cat${player.playerId}` : 'catID';
+                            
+                            if (player.type === 'bs') {
+                                lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}) [БС]`);
+                            } else if (player.type === 'is') {
+                                let visitedGames = 0;
+                                gameSessions.value.forEach(session => {
+                                    if (session.selectedGame) {
+                                        const playerRounds = session.rounds.filter(round => round.points[player.id] > 0).length;
+                                        const gameCount = Math.floor(playerRounds / session.selectedGame.rounds);
+                                        visitedGames += gameCount;
+                                    }
+                                });
+                                lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}; ${visitedGames}) [ИС]`);
+                            } else {
+                                lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints})`);
+                            }
+                        }
+                    });
+                    
+                    return lines.join('\n');
+                });
+
+                function addPlayer() {
+                    players.value.push({ 
+                        id: generateId(), 
+                        name: '', 
+                        playerId: '',
+                        type: 'kitten'
+                    });
+                }
+
+                function removePlayer(index) {
+                    if (players.value.length > 0) {
+                        const removedPlayer = players.value.splice(index, 1)[0];
+                        gameSessions.value.forEach(gameSession => {
+                            gameSession.rounds.forEach(round => {
+                                if (round.points[removedPlayer.id] !== undefined) {
+                                    delete round.points[removedPlayer.id];
+                                }
+                            });
+                        });
+                    }
+                }
+
+                function addGameSession() {
+                    gameSessions.value.push(createGameSession());
+                }
+
+                function removeGameSession(index) {
+                    if (gameSessions.value.length > 1) {
+                        gameSessions.value.splice(index, 1);
+                    }
+                }
+
+                function filterGames(sessionIndex) {
+                    const session = gameSessions.value[sessionIndex];
+                    const query = session.searchQuery.toLowerCase();
+                    session.filteredGames = games.filter(g => g.name.toLowerCase().includes(query));
+                }
+
+                function selectGame(sessionIndex, game) {
+                    const session = gameSessions.value[sessionIndex];
+                    session.selectedGame = game;
+                    session.searchQuery = game.name;
+                    session.showSuggestions = false;
+                    
+                    session.rounds = [];
+                    for (let i = 0; i < game.rounds; i++) {
+                        session.rounds.push({ points: {} });
+                    }
+                }
+
+                function removeRound(sessionIndex) {
+                    const session = gameSessions.value[sessionIndex];
+                    if (session.rounds.length > 1) {
+                        session.rounds.pop();
+                    }
+                }
+
+                function addRound(sessionIndex) {
+                    const session = gameSessions.value[sessionIndex];
+                    if (session.selectedGame) {
+                        session.rounds.push({ points: {} });
+                    }
+                }
+
+                function addCustomRounds(sessionIndex) {
+                    const session = gameSessions.value[sessionIndex];
+                    if (session.selectedGame) {
+                        const count = parseInt(prompt('Сколько раундов добавить?', '1'));
+                        if (count > 0) {
+                            for (let i = 0; i < count; i++) {
+                                session.rounds.push({ points: {} });
+                            }
+                        }
+                    }
+                }
+
+                function filteredPlayers(gameSession) {
+                    if (!gameSession.selectedGame) return players.value;
+                    if (!gameSession.selectedGame.adults) {
+                        return players.value.filter(p => p.type !== 'adult');
+                    }
+                    return players.value;
+                }
+
+                function copyReport() {
+                    const text = gameReport.value;
+                    navigator.clipboard.writeText(text);
+                    alert('Отчёт скопирован в буфер обмена!');
+                }
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.search-container')) {
+                        gameSessions.value.forEach(session => {
+                            session.showSuggestions = false;
+                        });
+                    }
+                });
+
+                return {
+                    players,
+                    gameSessions,
+                    gameReport,
+                    addPlayer,
+                    removePlayer,
+                    addGameSession,
+                    removeGameSession,
+                    filterGames,
+                    selectGame,
+                    removeRound,
+                    addRound,
+                    addCustomRounds,
+                    filteredPlayers,
+                    copyReport
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
