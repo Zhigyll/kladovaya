@@ -306,8 +306,8 @@
                                             </div>
                                             <div class="suggestion-details">
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
-                                                <span v-if="game.solo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
-                                                <span v-if="!game.solo && game.adults" class="tag tag-multi">👥 Для 2+ котят</span>
+                                                <span v-if="game.canBeSolo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
+                                                <span v-if="!game.canBeSolo && game.adults" class="tag tag-multi">👥 Для 2+ котят</span>
                                                 <span>⚡ {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
                                             </div>
                                         </div>
@@ -315,8 +315,9 @@
                                 </div>
                             </div>
 
-                            <div v-if="gameSession.selectedGame && !isGameCompatible(gameSession)" class="warning-badge">
-                                ⚠️ {{ getWarningMessage(gameSession) }}
+                            <!-- Только проверка на взрослых (без ограничений по количеству) -->
+                            <div v-if="gameSession.selectedGame && hasAdultsInGame(gameSession)" class="warning-badge">
+                                ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
                             </div>
 
                             <div v-if="gameSession.selectedGame" class="rounds-list">
@@ -368,31 +369,33 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // ПОЛНЫЙ СПИСОК ИГР С ПРАВИЛЬНЫМИ БАЛЛАМИ
+        // ПОЛНЫЙ СПИСОК ИГР
+        // canBeSolo: true — можно играть с 1 котёнком (нет ограничений на количество)
+        // canBeSolo: false — условно, но по факту ограничений нет, просто метка для красоты
         const games = [
-            { name: "Путаница", solo: false, adults: true, points: [2,1,0], rounds: 5 },
-            { name: "Догонялки", solo: false, adults: false, points: [7,3,0], rounds: 3 },
-            { name: "Викторина", solo: false, adults: true, points: [4,2,0], rounds: 5 },
-            { name: "Котячий патруль", solo: true, adults: true, points: [20,15,7], rounds: 1, oncePerHour: true },
-            { name: "Поле чудес", solo: false, adults: true, points: [10,5,0], rounds: 3 },
-            { name: "Липучки", solo: false, adults: false, points: [4,2,0], rounds: 3 },
-            { name: "Составь слово", solo: false, adults: false, points: [4,2,0], rounds: 5 },
-            { name: "Расшифруй", solo: true, adults: true, points: [4,2,0], rounds: 5 },  // ИСПРАВЛЕНО
-            { name: "Займи клетку", solo: false, adults: true, points: [5,3,0], rounds: 5 },
-            { name: "Погоня", solo: false, adults: false, points: [5,2,0], rounds: 3 },
-            { name: "Облом", solo: true, adults: false, points: [4,1,0], rounds: 5 },
-            { name: "Лабиринт", solo: true, adults: true, points: [5,3,1,0], rounds: 3 },
-            { name: "Охота на бабочек", solo: true, adults: false, points: [], rounds: 1, oncePerHour: true },
-            { name: "Три буквы", solo: false, adults: true, points: [3,1,0], rounds: 5 },
-            { name: "Клановое имя", solo: true, adults: true, points: [3,0], rounds: 5 },
-            { name: "Цель", solo: true, adults: false, points: [5,3,1,0], rounds: 3 },
-            { name: "Словарик", solo: true, adults: false, points: [4,0], rounds: 5 },
-            { name: "Песочница", solo: true, adults: true, points: [], rounds: 1, oncePerHour: true },
-            { name: "Три факта", solo: false, adults: true, points: [5,3,0], rounds: 3 },
-            { name: "Дай Пять", solo: false, adults: true, points: [15,7,0], rounds: 3, oncePerHour: true },
-            { name: "Кладоискатели", solo: true, adults: false, points: [20,10,0], rounds: 1, oncePerHour: true },
-            { name: "Считалочка", solo: false, adults: true, points: [5,3,0], rounds: 5 },
-            { name: "Букварь", solo: true, adults: true, points: [4,0], rounds: 5 }
+            { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Поле чудес", adults: true, points: [10,5,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Липучки", adults: false, points: [4,2,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Составь слово", adults: false, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Расшифруй", adults: true, points: [4,2,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Займи клетку", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Погоня", adults: false, points: [5,2,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Облом", adults: false, points: [4,1,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Лабиринт", adults: true, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false },
+            { name: "Охота на бабочек", adults: false, points: [], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Три буквы", adults: true, points: [3,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Клановое имя", adults: true, points: [3,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Цель", adults: false, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false },
+            { name: "Словарик", adults: false, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Песочница", adults: true, points: [], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Три факта", adults: true, points: [5,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Дай Пять", adults: true, points: [15,7,0], rounds: 3, canBeSolo: false, oncePerHour: true },
+            { name: "Кладоискатели", adults: false, points: [20,10,0], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Считалочка", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Букварь", adults: true, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false }
         ];
 
         function generateId() {
@@ -424,36 +427,18 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                function isGameCompatible(session) {
-                    if (!session.selectedGame) return true;
-                    const game = session.selectedGame;
+                // Проверка только на наличие взрослых (без ограничений по количеству)
+                function hasAdultsInGame(session) {
+                    if (!session.selectedGame) return false;
+                    if (session.selectedGame.adults) return false; // взрослые разрешены
+                    
+                    // Ищем взрослых среди выбранных игроков
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
                         Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
                     });
                     const selectedPlayers = players.value.filter(p => selectedPlayerIds.has(p.id));
-                    const count = selectedPlayers.length;
-                    const hasAdults = selectedPlayers.some(p => p.type === 'adult');
-                    if (game.solo && count > 1) return false;
-                    if (!game.solo && count === 1) return false;
-                    if (!game.adults && hasAdults) return false;
-                    return true;
-                }
-
-                function getWarningMessage(session) {
-                    if (!session.selectedGame) return '';
-                    const game = session.selectedGame;
-                    let selectedPlayerIds = new Set();
-                    session.rounds.forEach(round => {
-                        Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
-                    });
-                    const selectedPlayers = players.value.filter(p => selectedPlayerIds.has(p.id));
-                    const count = selectedPlayers.length;
-                    const hasAdults = selectedPlayers.some(p => p.type === 'adult');
-                    if (game.solo && count > 1) return `Игра "${game.name}" только для 1 котёнка! Выбрано ${count} игроков.`;
-                    if (!game.solo && count === 1) return `Игра "${game.name}" требует 2+ игроков! Выбран 1 игрок.`;
-                    if (!game.adults && hasAdults) return `В игре "${game.name}" нельзя взрослым!`;
-                    return '';
+                    return selectedPlayers.some(p => p.type === 'adult');
                 }
 
                 function updateFilteredGames(idx) {
@@ -591,7 +576,7 @@
                     updateFilteredGames, selectGame,
                     addRound, addCustomRounds, removeRound,
                     filteredPlayers, copyReport,
-                    isGameCompatible, getWarningMessage
+                    hasAdultsInGame
                 };
             }
         }).mount('#app');
