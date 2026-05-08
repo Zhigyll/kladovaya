@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Игровой отчёт</title>
+    <title>Игровой отчёт — с фильтрацией</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -137,8 +137,8 @@
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
         .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
         .btn-block { width: 100%; justify-content: center; }
-        .search-wrapper { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
-        .search-container { position: relative; flex: 1; }
+        .search-wrapper { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+        .search-container { position: relative; flex: 1; min-width: 200px; }
         .search-container .big-search {
             width: 100%;
             background: rgba(0,0,0,0.5);
@@ -152,6 +152,31 @@
             outline: none;
             border-color: #a855f7;
             box-shadow: 0 0 0 3px rgba(168,85,247,0.3);
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 40px;
+            padding: 8px 16px;
+            color: #e2e8f0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: #a855f7;
+            border-color: #a855f7;
+            color: white;
+        }
+        .filter-btn:hover {
+            background: rgba(168,85,247,0.5);
         }
         .show-all-btn {
             background: rgba(168,85,247,0.2);
@@ -255,7 +280,7 @@
         @media (max-width: 768px) {
             body { padding: 20px 16px; }
             .grid { grid-template-columns: 1fr; }
-            .search-wrapper { flex-direction: column; }
+            .search-wrapper { flex-direction: column; align-items: stretch; }
             .show-all-btn { text-align: center; }
         }
     </style>
@@ -268,7 +293,7 @@
                 <p>Управление игроками, играми и генерация отчётов</p>
             </div>
             <div class="grid">
-                <!-- Игроки -->
+                <!-- Игроки (без изменений) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-users"></i> Игроки</h2>
@@ -296,7 +321,7 @@
                     <button @click="addPlayer" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Добавить игрока</button>
                 </div>
 
-                <!-- Игры с расширенным поиском и пометками -->
+                <!-- Игры с фильтрацией -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -308,7 +333,7 @@
                                 <div class="search-container">
                                     <input 
                                         v-model="gameSession.searchQuery" 
-                                        @input="filterGames(idx)"
+                                        @input="updateFilteredGames(idx)"
                                         @focus="gameSession.showSuggestions = true"
                                         placeholder="🔍 Напишите название игры..."
                                         class="big-search"
@@ -338,6 +363,19 @@
                                 </div>
                                 <button @click="showAllGames(idx)" class="show-all-btn"><i class="fas fa-list"></i> Все игры</button>
                                 <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1"><i class="fas fa-trash"></i></button>
+                            </div>
+
+                            <!-- Кнопки фильтрации -->
+                            <div class="filter-buttons">
+                                <button @click="setFilter(idx, 'all')" :class="{ 'active': gameSession.currentFilter === 'all' }" class="filter-btn">
+                                    📋 Все игры
+                                </button>
+                                <button @click="setFilter(idx, 'no_adults')" :class="{ 'active': gameSession.currentFilter === 'no_adults' }" class="filter-btn">
+                                    🚫 Без взрослых
+                                </button>
+                                <button @click="setFilter(idx, 'solo')" :class="{ 'active': gameSession.currentFilter === 'solo' }" class="filter-btn">
+                                    👤 Для 1 котёнка
+                                </button>
                             </div>
 
                             <!-- Предупреждения о несоответствии -->
@@ -374,7 +412,7 @@
                     <button @click="addGameSession" class="btn btn-primary btn-block"><i class="fas fa-plus-circle"></i> Добавить игру</button>
                 </div>
 
-                <!-- Отчёт -->
+                <!-- Отчёт (без изменений) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-file-alt"></i> Отчёт об играх</h2>
@@ -390,7 +428,7 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // ПОЛНЫЙ СПИСОК ИГР С ПРАВИЛЬНЫМИ ПОМЕТКАМИ
+        // Полный список игр
         const games = [
             { name: "Путаница", solo: false, adults: true, points: [2,1], rounds: 5 },
             { name: "Догонялки", solo: false, adults: false, points: [7,3], rounds: 3 },
@@ -428,8 +466,26 @@
                 selectedGame: null,
                 filteredGames: [],
                 showSuggestions: false,
-                rounds: []
+                rounds: [],
+                currentFilter: 'all'   // 'all', 'no_adults', 'solo'
             };
+        }
+
+        // Функция фильтрации игр по текущему фильтру и поисковому запросу
+        function applyFilter(session) {
+            let filtered = games;
+            // Фильтр по категории
+            if (session.currentFilter === 'no_adults') {
+                filtered = filtered.filter(g => !g.adults);
+            } else if (session.currentFilter === 'solo') {
+                filtered = filtered.filter(g => g.solo);
+            }
+            // Фильтр по поисковому запросу
+            const query = session.searchQuery.toLowerCase().trim();
+            if (query) {
+                filtered = filtered.filter(g => g.name.toLowerCase().includes(query));
+            }
+            session.filteredGames = filtered;
         }
 
         createApp({
@@ -441,8 +497,6 @@
                 function isGameCompatible(session) {
                     if (!session.selectedGame) return true;
                     const game = session.selectedGame;
-                    // Получаем ID выбранных игроков (тех, кто есть в round.points хотя бы в одном раунде)
-                    // Но проще: смотрим на всех игроков, у которых есть запись в любом раунде
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
                         Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
@@ -472,6 +526,38 @@
                     if (!game.solo && count === 1) return `⚠️ Игра "${game.name}" требует 2+ игроков! Выбран 1 игрок.`;
                     if (!game.adults && hasAdults) return `⚠️ В игре "${game.name}" нельзя участвовать взрослым! Уберите взрослых.`;
                     return '⚠️ Несоответствие условиям игры';
+                }
+
+                // Обновить список filteredGames для сессии
+                function updateFilteredGames(idx) {
+                    const session = gameSessions.value[idx];
+                    applyFilter(session);
+                }
+
+                function setFilter(idx, filterType) {
+                    const session = gameSessions.value[idx];
+                    session.currentFilter = filterType;
+                    applyFilter(session);
+                    session.showSuggestions = true; // показать подсказки после смены фильтра
+                }
+
+                function showAllGames(idx) {
+                    const session = gameSessions.value[idx];
+                    session.currentFilter = 'all';
+                    session.searchQuery = '';
+                    applyFilter(session);
+                    session.showSuggestions = true;
+                }
+
+                function selectGame(idx, game) {
+                    const session = gameSessions.value[idx];
+                    session.selectedGame = game;
+                    session.searchQuery = game.name;
+                    session.showSuggestions = false;
+                    session.rounds = [];
+                    for (let i = 0; i < game.rounds; i++) {
+                        session.rounds.push({ points: {} });
+                    }
                 }
 
                 const gameReport = computed(() => {
@@ -550,6 +636,7 @@
                     return lines.join('\n');
                 });
 
+                // Базовые методы
                 function addPlayer() { players.value.push({ id: generateId(), name: '', playerId: '', type: 'kitten' }); }
                 function removePlayer(index) {
                     const removed = players.value.splice(index,1)[0];
@@ -557,24 +644,6 @@
                 }
                 function addGameSession() { gameSessions.value.push(createGameSession()); }
                 function removeGameSession(index) { if (gameSessions.value.length > 1) gameSessions.value.splice(index,1); }
-                function filterGames(idx) {
-                    const s = gameSessions.value[idx];
-                    s.filteredGames = games.filter(g => g.name.toLowerCase().includes(s.searchQuery.toLowerCase()));
-                }
-                function showAllGames(idx) {
-                    const s = gameSessions.value[idx];
-                    s.filteredGames = games;
-                    s.showSuggestions = true;
-                }
-                function selectGame(idx, game) {
-                    const s = gameSessions.value[idx];
-                    s.selectedGame = game;
-                    s.searchQuery = game.name;
-                    s.showSuggestions = false;
-                    s.rounds = [];
-                    for (let i = 0; i < game.rounds; i++) s.rounds.push({ points: {} });
-                }
-                function removeRound(idx) { const s = gameSessions.value[idx]; if (s.rounds.length > 1) s.rounds.pop(); }
                 function addRound(idx) { const s = gameSessions.value[idx]; if (s.selectedGame) s.rounds.push({ points: {} }); }
                 function addCustomRounds(idx) {
                     const s = gameSessions.value[idx];
@@ -583,20 +652,28 @@
                         if (cnt > 0) for(let i=0;i<cnt;i++) s.rounds.push({ points: {} });
                     }
                 }
+                function removeRound(idx) { const s = gameSessions.value[idx]; if (s.rounds.length > 1) s.rounds.pop(); }
                 function filteredPlayers(session) {
                     if (!session.selectedGame) return players.value;
                     if (!session.selectedGame.adults) return players.value.filter(p => p.type !== 'adult');
                     return players.value;
                 }
                 function copyReport() { navigator.clipboard.writeText(gameReport.value); alert('Отчёт скопирован'); }
+                
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.search-container')) gameSessions.value.forEach(s => s.showSuggestions = false);
                 });
 
+                // Инициализация фильтрации для всех сессий
+                gameSessions.value.forEach(s => applyFilter(s));
+
                 return {
-                    players, gameSessions, gameReport, addPlayer, removePlayer, addGameSession, removeGameSession,
-                    filterGames, showAllGames, selectGame, removeRound, addRound, addCustomRounds,
-                    filteredPlayers, copyReport, isGameCompatible, getWarningMessage
+                    players, gameSessions, gameReport,
+                    addPlayer, removePlayer, addGameSession, removeGameSession,
+                    setFilter, updateFilteredGames, showAllGames, selectGame,
+                    addRound, addCustomRounds, removeRound,
+                    filteredPlayers, copyReport,
+                    isGameCompatible, getWarningMessage
                 };
             }
         }).mount('#app');
