@@ -232,51 +232,107 @@
             justify-content: center;
         }
 
+        /* ========== РАСШИРЕННЫЙ ПОИСК ИГР ========== */
+        .search-wrapper {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        
         .search-container {
             position: relative;
             flex: 1;
-            min-width: 200px;
         }
-
+        
+        .search-container .big-search {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(168, 85, 247, 0.3);
+            border-radius: 60px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 1.1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .search-container .big-search:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.3);
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .search-container .big-search::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+        }
+        
+        .show-all-btn {
+            background: rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            border-radius: 60px;
+            padding: 12px 20px;
+            color: #c084fc;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .show-all-btn:hover {
+            background: rgba(168, 85, 247, 0.4);
+            color: white;
+        }
+        
         .suggestions {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            background: #2d2a3e;
-            border-radius: 16px;
-            margin-top: 8px;
-            z-index: 100;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .expanded-suggestions {
-            max-height: 400px;
-            min-width: 320px;
-            width: 100%;
             background: #1e1b2e;
             border-radius: 20px;
+            margin-top: 8px;
+            z-index: 1000;
+            overflow: hidden;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            max-height: 400px;
+            overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
-
+        
         .suggestion-item {
-            padding: 12px 16px;
+            padding: 14px 18px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
             cursor: pointer;
             transition: all 0.2s;
             color: #e2e8f0;
         }
-
+        
         .suggestion-item:last-child {
             border-bottom: none;
         }
-
+        
         .suggestion-item:hover {
             background: rgba(168, 85, 247, 0.3);
-            transform: translateX(4px);
+            transform: translateX(5px);
         }
-
+        
+        .suggestion-name {
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .suggestion-details {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
+        
         .rounds-list {
             margin-top: 20px;
         }
@@ -372,6 +428,12 @@
             .radio-group {
                 justify-content: center;
             }
+            .search-wrapper {
+                flex-direction: column;
+            }
+            .show-all-btn {
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -414,7 +476,7 @@
                     </button>
                 </div>
 
-                <!-- Блок игр (расширенный) -->
+                <!-- Блок игр (РАСШИРЕННЫЙ ПОИСК) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -422,38 +484,41 @@
                     </div>
                     <div class="games-list">
                         <div v-for="(gameSession, idx) in gameSessions" :key="gameSession.id" class="game-item">
-                            <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
-                                <div class="search-container" style="flex: 1; min-width: 0;">
+                            <div class="search-wrapper">
+                                <div class="search-container">
                                     <input 
                                         v-model="gameSession.searchQuery" 
                                         @input="filterGames(idx)"
                                         @focus="gameSession.showSuggestions = true"
-                                        placeholder="🔍 Начните вводить название игры..."
-                                        class="modern-input"
-                                        style="width: 100%; font-size: 1rem; padding: 12px 16px;"
+                                        placeholder="🔍 Напишите название игры..."
+                                        class="big-search"
                                     >
-                                    <div v-if="gameSession.showSuggestions && gameSession.filteredGames.length" class="suggestions expanded-suggestions">
+                                    <div v-if="gameSession.showSuggestions && gameSession.filteredGames.length" class="suggestions">
                                         <div 
                                             v-for="game in gameSession.filteredGames" 
                                             :key="game.name"
                                             @click="selectGame(idx, game)"
                                             class="suggestion-item"
                                         >
-                                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                                                <span style="font-weight: 600;"><i class="fas fa-gamepad"></i> {{ game.name }}</span>
+                                            <div class="suggestion-name">
+                                                <span><i class="fas fa-gamepad"></i> {{ game.name }}</span>
                                                 <span style="font-size: 11px; color: #c084fc;">
-                                                    {{ game.rounds }} раундов 
-                                                    <span v-if="game.oncePerHour" style="margin-left: 8px;">⭐ 3/раунд</span>
+                                                    {{ game.rounds }} р.
+                                                    <span v-if="game.oncePerHour" style="margin-left: 8px;">⭐ 3</span>
                                                 </span>
                                             </div>
-                                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                                Баллы: {{ game.points && game.points.length ? game.points.join(', ') : 'ручной ввод' }}
+                                            <div class="suggestion-details">
+                                                Баллы: {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}
+                                                <span v-if="game.adults === false" style="margin-left: 10px;">🚫 без взрослых</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1" style="flex-shrink: 0;">
-                                    <i class="fas fa-trash"></i> Удалить
+                                <button @click="showAllGames(idx)" class="show-all-btn">
+                                    <i class="fas fa-list"></i> Все игры
+                                </button>
+                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
 
@@ -694,6 +759,12 @@
                     session.filteredGames = games.filter(g => g.name.toLowerCase().includes(query));
                 }
 
+                function showAllGames(sessionIndex) {
+                    const session = gameSessions.value[sessionIndex];
+                    session.filteredGames = games;
+                    session.showSuggestions = true;
+                }
+
                 function selectGame(sessionIndex, game) {
                     const session = gameSessions.value[sessionIndex];
                     session.selectedGame = game;
@@ -747,7 +818,8 @@
                 return {
                     players, gameSessions, gameReport,
                     addPlayer, removePlayer, addGameSession, removeGameSession,
-                    filterGames, selectGame, removeRound, addRound, addCustomRounds,
+                    filterGames, showAllGames, selectGame,
+                    removeRound, addRound, addCustomRounds,
                     filteredPlayers, copyReport
                 };
             }
