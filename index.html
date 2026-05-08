@@ -190,13 +190,14 @@
         .tag-adult-no { background: rgba(239,68,68,0.15); color: #f87171; }
         .tag-solo { background: rgba(168,85,247,0.15); color: #c084fc; }
         .warning-badge {
-            background: rgba(239,68,68,0.1);
+            background: rgba(239,68,68,0.15);
             color: #fca5a5;
-            padding: 6px 12px;
+            padding: 8px 12px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             display: inline-block;
             margin-bottom: 12px;
+            border: 1px solid rgba(239,68,68,0.3);
         }
         .rounds-list { margin-top: 16px; }
         .round-card {
@@ -308,16 +309,16 @@
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
                                                 <span v-if="game.canBeSolo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
                                                 <span>⚡ {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
-                                                <span v-if="game.oncePerHour" style="color: #c084fc;">⭐ 3 балла в отчёт / +3 игры ИС</span>
+                                                <span v-if="game.oncePerHour" style="color: #c084fc;">⭐ 3 балла / +3 игры ИС</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Проверка на взрослых -->
+                            <!-- Предупреждение о взрослых -->
                             <div v-if="gameSession.selectedGame && !gameSession.selectedGame.adults && hasAdultsInGame(gameSession)" class="warning-badge">
-                                ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
+                                ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым! Уберите взрослых игроков.
                             </div>
 
                             <div v-if="gameSession.selectedGame" class="rounds-list">
@@ -326,7 +327,8 @@
                                         <i class="fas fa-circle" style="font-size: 8px;"></i> Раунд {{ roundIndex + 1 }}
                                         <span v-if="gameSession.selectedGame.oncePerHour" style="margin-left: 8px; color: #c084fc;">⭐ +3 в отчёт</span>
                                     </div>
-                                    <div v-for="player in players" :key="player.id" class="player-point-row">
+                                    <!-- Показываем только разрешённых игроков (без взрослых, если adults=false) -->
+                                    <div v-for="player in getPlayersForGame(gameSession.selectedGame)" :key="player.id" class="player-point-row">
                                         <span class="player-name">{{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
                                         <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
                                             <option :value="null">—</option>
@@ -343,7 +345,7 @@
                                 </div>
                             </div>
                             
-                            <div class="game-buttons">
+                            <div class="game-buttons" v-if="gameSession.selectedGame">
                                 <button @click="removeGameSessionByIndex(idx)" class="btn btn-danger btn-sm">
                                     <i class="fas fa-trash-alt"></i> Удалить игру
                                 </button>
@@ -424,7 +426,21 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
+                // Функция для получения списка игроков, которые могут участвовать в игре
+                // Если adults = false, исключаем взрослых
+                function getPlayersForGame(game) {
+                    if (!game) return players.value;
+                    if (game.adults === false) {
+                        return players.value.filter(p => p.type !== 'adult');
+                    }
+                    return players.value;
+                }
+
+                // Проверка, есть ли взрослые среди выбранных игроков в этой сессии
                 function hasAdultsInGame(session) {
+                    if (!session.selectedGame) return false;
+                    if (session.selectedGame.adults === true) return false;
+                    
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
                         Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
@@ -457,7 +473,6 @@
                     lines.push(`Игровик: ID Игровика | [catID]`);
                     lines.push(`Время: время начала игр - время конца игр; ${dateStr}`);
                     
-                    // Подсчёт игр для строки "Игра:"
                     const gameTotals = {};
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
@@ -481,7 +496,6 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
-                    // Реальные баллы игроков
                     const playerRealScores = {};
                     players.value.forEach(p => playerRealScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -494,15 +508,11 @@
                         }
                     });
                     
-                    // Посещённые игры для ИС:
-                    // - За обычную игру: 1 посещённая игра за ВСЕ раунды
-                    // - За игру раз в 1,5 часа: 3 посещённых игры за ВСЕ раунды
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             const game = session.selectedGame;
-                            // Проверяем, участвовал ли ИС хотя бы в одном раунде этой игры
                             let isPlayed = false;
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
@@ -513,7 +523,6 @@
                             });
                             if (isPlayed) {
                                 if (game.oncePerHour) {
-                                    // Игры раз в 1,5 часа: +3 посещённых игры
                                     session.rounds.forEach(round => {
                                         for (let [pid, score] of Object.entries(round.points)) {
                                             if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
@@ -522,7 +531,6 @@
                                         }
                                     });
                                 } else {
-                                    // Обычные игры: +1 посещённая игра за всю игру
                                     const isPlayers = new Set();
                                     session.rounds.forEach(round => {
                                         for (let [pid, score] of Object.entries(round.points)) {
@@ -539,19 +547,16 @@
                         }
                     });
                     
-                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0})`);
                         }
                     });
-                    // БС
                     players.value.forEach(player => {
                         if (player.type === 'bs') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0}) [БС]`);
                         }
                     });
-                    // ИС
                     players.value.forEach(player => {
                         if (player.type === 'is') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0}; ${isVisitedGames[player.id] || 0}) [ИС]`);
@@ -598,6 +603,7 @@
                     updateFilteredGames, selectGame,
                     addRound, addCustomRounds, removeRound,
                     copyReport,
+                    getPlayersForGame,
                     hasAdultsInGame
                 };
             }
