@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Игровой отчёт — с фильтрацией</title>
+    <title>Игровой отчёт — полная версия</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -68,6 +68,7 @@
             border-radius: 40px;
             font-size: 0.75rem;
             color: #c084fc;
+            font-weight: 500;
         }
         .players-list, .games-list {
             display: flex;
@@ -137,36 +138,38 @@
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
         .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
         .btn-block { width: 100%; justify-content: center; }
-        .search-wrapper { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
-        .search-container { position: relative; flex: 1; min-width: 200px; }
+        
+        /* поиск и фильтры — увеличенные */
+        .search-wrapper { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+        .search-container { position: relative; flex: 1; min-width: 220px; }
         .search-container .big-search {
             width: 100%;
             background: rgba(0,0,0,0.5);
             border: 2px solid rgba(168,85,247,0.3);
             border-radius: 60px;
-            padding: 16px 20px;
+            padding: 18px 24px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            font-weight: 500;
         }
         .search-container .big-search:focus {
-            outline: none;
             border-color: #a855f7;
-            box-shadow: 0 0 0 3px rgba(168,85,247,0.3);
+            box-shadow: 0 0 0 4px rgba(168,85,247,0.3);
         }
-        .filter-buttons {
+        .filter-group {
             display: flex;
             gap: 10px;
-            margin-top: 8px;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
         .filter-btn {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 40px;
-            padding: 8px 16px;
+            border-radius: 60px;
+            padding: 10px 20px;
             color: #e2e8f0;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -174,72 +177,79 @@
             background: #a855f7;
             border-color: #a855f7;
             color: white;
+            box-shadow: 0 2px 8px rgba(168,85,247,0.4);
         }
         .filter-btn:hover {
-            background: rgba(168,85,247,0.5);
+            background: rgba(168,85,247,0.6);
+            transform: translateY(-1px);
         }
-        .show-all-btn {
-            background: rgba(168,85,247,0.2);
-            border: 1px solid rgba(168,85,247,0.5);
-            border-radius: 60px;
-            padding: 12px 20px;
-            color: #c084fc;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .show-all-btn:hover { background: rgba(168,85,247,0.4); color: white; }
+        
+        /* выпадающий список — крупный и читаемый */
         .suggestions {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
             background: #1e1b2e;
-            border-radius: 20px;
-            margin-top: 8px;
+            border-radius: 28px;
+            margin-top: 12px;
             z-index: 1000;
-            max-height: 400px;
+            max-height: 520px;
             overflow-y: auto;
-            border: 1px solid rgba(168,85,247,0.3);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(168,85,247,0.5);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+            min-width: 400px;
+            width: auto;
+        }
+        @media (max-width: 600px) {
+            .suggestions { min-width: 280px; }
         }
         .suggestion-item {
-            padding: 14px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
             transition: all 0.2s;
-            color: #e2e8f0;
         }
-        .suggestion-item:hover { background: rgba(168,85,247,0.3); transform: translateX(5px); }
+        .suggestion-item:hover {
+            background: rgba(168,85,247,0.3);
+            transform: translateX(6px);
+        }
         .suggestion-name {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
+            margin-bottom: 8px;
         }
         .suggestion-details {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
+            align-items: center;
         }
-        .tag { padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 500; }
-        .tag-adult-ok { background: rgba(34,197,94,0.2); color: #4ade80; }
-        .tag-adult-no { background: rgba(239,68,68,0.2); color: #f87171; }
-        .tag-solo { background: rgba(168,85,247,0.2); color: #c084fc; }
-        .tag-multi { background: rgba(59,130,246,0.2); color: #60a5fa; }
+        .tag {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .tag-adult-ok { background: rgba(34,197,94,0.25); color: #86efac; }
+        .tag-adult-no { background: rgba(239,68,68,0.25); color: #fca5a5; }
+        .tag-solo { background: rgba(168,85,247,0.3); color: #d8b4fe; }
+        .tag-multi { background: rgba(59,130,246,0.25); color: #93c5fd; }
         .warning-badge {
             background: rgba(239,68,68,0.3);
             color: #fca5a5;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            margin-left: 10px;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            display: inline-block;
+            margin-bottom: 12px;
         }
         .rounds-list { margin-top: 20px; }
         .round-card {
@@ -281,7 +291,6 @@
             body { padding: 20px 16px; }
             .grid { grid-template-columns: 1fr; }
             .search-wrapper { flex-direction: column; align-items: stretch; }
-            .show-all-btn { text-align: center; }
         }
     </style>
 </head>
@@ -293,7 +302,7 @@
                 <p>Управление игроками, играми и генерация отчётов</p>
             </div>
             <div class="grid">
-                <!-- Игроки (без изменений) -->
+                <!-- Колонка игроков -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-users"></i> Игроки</h2>
@@ -321,7 +330,7 @@
                     <button @click="addPlayer" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Добавить игрока</button>
                 </div>
 
-                <!-- Игры с фильтрацией -->
+                <!-- Колонка игр с увеличенным интерфейсом -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -347,7 +356,7 @@
                                         >
                                             <div class="suggestion-name">
                                                 <span><i class="fas fa-gamepad"></i> {{ game.name }}</span>
-                                                <span style="font-size: 11px; color: #c084fc;">{{ game.rounds }} р.</span>
+                                                <span style="font-size: 0.85rem; background: #2d2a3e; padding: 4px 10px; border-radius: 40px;">{{ game.rounds }} раундов</span>
                                             </div>
                                             <div class="suggestion-details">
                                                 <span class="tag" :class="game.adults ? 'tag-adult-ok' : 'tag-adult-no'">
@@ -361,12 +370,10 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button @click="showAllGames(idx)" class="show-all-btn"><i class="fas fa-list"></i> Все игры</button>
-                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1"><i class="fas fa-trash"></i></button>
+                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1"><i class="fas fa-trash"></i> Удалить</button>
                             </div>
-
-                            <!-- Кнопки фильтрации -->
-                            <div class="filter-buttons">
+                            <!-- Кнопки фильтрации (переключатели) -->
+                            <div class="filter-group">
                                 <button @click="setFilter(idx, 'all')" :class="{ 'active': gameSession.currentFilter === 'all' }" class="filter-btn">
                                     📋 Все игры
                                 </button>
@@ -378,10 +385,9 @@
                                 </button>
                             </div>
 
-                            <!-- Предупреждения о несоответствии -->
-                            <div v-if="gameSession.selectedGame && !isGameCompatible(gameSession)" class="warning-badge" style="margin-bottom: 12px;">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                {{ getWarningMessage(gameSession) }}
+                            <!-- Предупреждение о несовместимости -->
+                            <div v-if="gameSession.selectedGame && !isGameCompatible(gameSession)" class="warning-badge">
+                                <i class="fas fa-exclamation-triangle"></i> {{ getWarningMessage(gameSession) }}
                             </div>
 
                             <!-- Раунды -->
@@ -412,7 +418,7 @@
                     <button @click="addGameSession" class="btn btn-primary btn-block"><i class="fas fa-plus-circle"></i> Добавить игру</button>
                 </div>
 
-                <!-- Отчёт (без изменений) -->
+                <!-- Колонка отчёта -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-file-alt"></i> Отчёт об играх</h2>
@@ -428,7 +434,7 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // Полный список игр
+        // База игр с правильными флагами (adults, solo, oncePerHour)
         const games = [
             { name: "Путаница", solo: false, adults: true, points: [2,1], rounds: 5 },
             { name: "Догонялки", solo: false, adults: false, points: [7,3], rounds: 3 },
@@ -467,21 +473,19 @@
                 filteredGames: [],
                 showSuggestions: false,
                 rounds: [],
-                currentFilter: 'all'   // 'all', 'no_adults', 'solo'
+                currentFilter: 'all'
             };
         }
 
-        // Функция фильтрации игр по текущему фильтру и поисковому запросу
+        // Применяет фильтр (категория + текст)
         function applyFilter(session) {
-            let filtered = games;
-            // Фильтр по категории
+            let filtered = [...games];
             if (session.currentFilter === 'no_adults') {
                 filtered = filtered.filter(g => !g.adults);
             } else if (session.currentFilter === 'solo') {
                 filtered = filtered.filter(g => g.solo);
             }
-            // Фильтр по поисковому запросу
-            const query = session.searchQuery.toLowerCase().trim();
+            const query = session.searchQuery.trim().toLowerCase();
             if (query) {
                 filtered = filtered.filter(g => g.name.toLowerCase().includes(query));
             }
@@ -493,7 +497,7 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                // Проверка совместимости игры с выбранными игроками
+                // Совместимость выбранных игроков с игрой
                 function isGameCompatible(session) {
                     if (!session.selectedGame) return true;
                     const game = session.selectedGame;
@@ -504,7 +508,6 @@
                     const selectedPlayers = players.value.filter(p => selectedPlayerIds.has(p.id));
                     const count = selectedPlayers.length;
                     const hasAdults = selectedPlayers.some(p => p.type === 'adult');
-                    
                     if (game.solo && count > 1) return false;
                     if (!game.solo && count === 1) return false;
                     if (!game.adults && hasAdults) return false;
@@ -521,14 +524,12 @@
                     const selectedPlayers = players.value.filter(p => selectedPlayerIds.has(p.id));
                     const count = selectedPlayers.length;
                     const hasAdults = selectedPlayers.some(p => p.type === 'adult');
-                    
-                    if (game.solo && count > 1) return `⚠️ Игра "${game.name}" только для 1 котёнка! Выбрано ${count} игроков.`;
-                    if (!game.solo && count === 1) return `⚠️ Игра "${game.name}" требует 2+ игроков! Выбран 1 игрок.`;
-                    if (!game.adults && hasAdults) return `⚠️ В игре "${game.name}" нельзя участвовать взрослым! Уберите взрослых.`;
-                    return '⚠️ Несоответствие условиям игры';
+                    if (game.solo && count > 1) return `Игра "${game.name}" только для 1 котёнка! Выбрано ${count} игроков.`;
+                    if (!game.solo && count === 1) return `Игра "${game.name}" требует 2+ игроков! Выбран 1 игрок.`;
+                    if (!game.adults && hasAdults) return `В игре "${game.name}" нельзя участвовать взрослым! Уберите взрослых.`;
+                    return 'Несоответствие условиям игры';
                 }
 
-                // Обновить список filteredGames для сессии
                 function updateFilteredGames(idx) {
                     const session = gameSessions.value[idx];
                     applyFilter(session);
@@ -537,14 +538,6 @@
                 function setFilter(idx, filterType) {
                     const session = gameSessions.value[idx];
                     session.currentFilter = filterType;
-                    applyFilter(session);
-                    session.showSuggestions = true; // показать подсказки после смены фильтра
-                }
-
-                function showAllGames(idx) {
-                    const session = gameSessions.value[idx];
-                    session.currentFilter = 'all';
-                    session.searchQuery = '';
                     applyFilter(session);
                     session.showSuggestions = true;
                 }
@@ -560,6 +553,7 @@
                     }
                 }
 
+                // Генерация отчёта (полная логика)
                 const gameReport = computed(() => {
                     const lines = [];
                     const now = new Date();
@@ -636,7 +630,6 @@
                     return lines.join('\n');
                 });
 
-                // Базовые методы
                 function addPlayer() { players.value.push({ id: generateId(), name: '', playerId: '', type: 'kitten' }); }
                 function removePlayer(index) {
                     const removed = players.value.splice(index,1)[0];
@@ -670,7 +663,7 @@
                 return {
                     players, gameSessions, gameReport,
                     addPlayer, removePlayer, addGameSession, removeGameSession,
-                    setFilter, updateFilteredGames, showAllGames, selectGame,
+                    setFilter, updateFilteredGames, selectGame,
                     addRound, addCustomRounds, removeRound,
                     filteredPlayers, copyReport,
                     isGameCompatible, getWarningMessage
