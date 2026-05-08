@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Игровой отчёт — поиск с метками</title>
+    <title>Игровой отчёт</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -15,7 +15,7 @@
             min-height: 100vh;
             padding: 40px 24px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1500px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 40px; }
         .header h1 {
             font-size: 2.5rem;
@@ -25,161 +25,164 @@
             background-clip: text;
             color: transparent;
         }
-        .header p { color: rgba(255,255,255,0.6); margin-top: 8px; }
+        .header p { color: rgba(255,255,255,0.7); margin-top: 8px; }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 28px;
             margin-bottom: 24px;
         }
         .glass-card {
-            background: rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.08);
             backdrop-filter: blur(12px);
-            border-radius: 28px;
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 24px;
+            border-radius: 32px;
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 28px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .glass-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            border-color: rgba(168,85,247,0.3);
+            border-color: rgba(168,85,247,0.4);
         }
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
             border-bottom: 2px solid rgba(255,255,255,0.1);
         }
         .card-header h2 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 600;
             color: white;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
-        .card-header h2 i { color: #a855f7; }
+        .card-header h2 i { color: #a855f7; font-size: 1.5rem; }
         .badge {
-            background: rgba(168,85,247,0.2);
-            padding: 6px 12px;
+            background: rgba(168,85,247,0.25);
+            padding: 6px 14px;
             border-radius: 40px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: #c084fc;
             font-weight: 500;
         }
         .players-list, .games-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-            max-height: 400px;
+            gap: 14px;
+            margin-bottom: 24px;
+            max-height: 450px;
             overflow-y: auto;
         }
         .player-item, .game-item {
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 16px;
-            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.06);
+            border-radius: 24px;
+            padding: 18px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .player-fields {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 14px;
+            margin-bottom: 14px;
         }
-        .player-fields input { flex: 1; min-width: 120px; }
+        .player-fields input { flex: 1; min-width: 130px; }
         .radio-group {
             display: flex;
-            gap: 16px;
+            gap: 20px;
             flex-wrap: wrap;
         }
         .radio-group label {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 0.85rem;
-            color: #e2e8f0;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #f0f0f0;
             cursor: pointer;
         }
-        .radio-group input[type="radio"] { accent-color: #a855f7; }
+        .radio-group input[type="radio"] { accent-color: #a855f7; width: 16px; height: 16px; }
         .modern-input, input, select {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 16px;
-            padding: 10px 16px;
-            color: white;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 12px 18px;
+            color: #f0f0f0;
             font-family: inherit;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
         .modern-input:focus, input:focus, select:focus {
             outline: none;
             border-color: #a855f7;
-            box-shadow: 0 0 0 3px rgba(168,85,247,0.2);
+            box-shadow: 0 0 0 3px rgba(168,85,247,0.25);
         }
         .btn {
             border: none;
-            border-radius: 40px;
-            padding: 10px 20px;
+            border-radius: 50px;
+            padding: 12px 24px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-family: inherit;
+            font-size: 0.9rem;
         }
         .btn-primary { background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; }
         .btn-primary:hover { transform: scale(1.02); box-shadow: 0 8px 20px rgba(168,85,247,0.4); }
-        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
         .btn-danger:hover { background: rgba(239,68,68,0.4); }
-        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        .btn-secondary { background: rgba(255,255,255,0.12); color: #e2e8f0; }
         .btn-secondary:hover { background: rgba(255,255,255,0.2); }
-        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+        .btn-sm { padding: 8px 16px; font-size: 0.85rem; }
         .btn-block { width: 100%; justify-content: center; }
         
-        /* поиск — увеличенный */
-        .search-wrapper { margin-bottom: 20px; }
+        /* поиск — широкий и крупный */
+        .search-wrapper { margin-bottom: 24px; }
         .search-container { position: relative; }
         .search-container .big-search {
             width: 100%;
             background: rgba(0,0,0,0.5);
-            border: 2px solid rgba(168,85,247,0.3);
+            border: 2px solid rgba(168,85,247,0.4);
             border-radius: 60px;
-            padding: 18px 24px;
+            padding: 18px 26px;
             color: white;
             font-size: 1.2rem;
             font-weight: 500;
         }
+        .search-container .big-search::placeholder { color: rgba(255,255,255,0.5); }
         .search-container .big-search:focus {
             border-color: #a855f7;
             box-shadow: 0 0 0 4px rgba(168,85,247,0.3);
         }
         
-        /* выпадающий список — крупный */
+        /* выпадающий список — широкий, с крупным текстом */
         .suggestions {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
-            background: #1e1b2e;
+            background: #1a1729;
             border-radius: 28px;
             margin-top: 12px;
             z-index: 1000;
-            max-height: 520px;
+            max-height: 560px;
             overflow-y: auto;
             border: 1px solid rgba(168,85,247,0.5);
-            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
-            min-width: 400px;
-            width: auto;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.5);
+            min-width: 480px;
+            width: 100%;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 700px) {
             .suggestions { min-width: 280px; }
+            .grid { grid-template-columns: 1fr; }
         }
         .suggestion-item {
-            padding: 16px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -189,80 +192,82 @@
         }
         .suggestion-name {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: 12px;
+            margin-bottom: 10px;
+            color: white;
         }
         .suggestion-details {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #cbd5e1;
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
             align-items: center;
         }
         .tag {
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.75rem;
+            padding: 5px 14px;
+            border-radius: 40px;
+            font-size: 0.8rem;
             font-weight: 600;
         }
-        .tag-adult-no { background: rgba(239,68,68,0.25); color: #fca5a5; }
-        .tag-solo { background: rgba(168,85,247,0.3); color: #d8b4fe; }
-        .tag-multi { background: rgba(59,130,246,0.25); color: #93c5fd; }
+        .tag-adult-no { background: rgba(239,68,68,0.3); color: #fca5a5; }
+        .tag-solo { background: rgba(168,85,247,0.35); color: #d8b4fe; }
+        .tag-multi { background: rgba(59,130,246,0.3); color: #93c5fd; }
         .warning-badge {
-            background: rgba(239,68,68,0.3);
+            background: rgba(239,68,68,0.25);
             color: #fca5a5;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 40px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             display: inline-block;
-            margin-bottom: 12px;
-        }
-        .rounds-list { margin-top: 20px; }
-        .round-card {
-            background: rgba(0,0,0,0.2);
-            border-radius: 20px;
-            padding: 16px;
             margin-bottom: 16px;
+        }
+        .rounds-list { margin-top: 24px; }
+        .round-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 18px;
         }
         .round-title {
             font-weight: 600;
             color: #c084fc;
-            margin-bottom: 12px;
-            font-size: 0.9rem;
+            margin-bottom: 14px;
+            font-size: 1rem;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .player-point-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .player-point-row:last-child { border-bottom: none; }
-        .player-name { font-weight: 500; color: white; min-width: 120px; }
-        .player-point-row select, .player-point-row input { width: 100px; text-align: center; }
-        .round-buttons { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+        .player-name { font-weight: 500; color: #f0f0f0; min-width: 140px; font-size: 0.95rem; }
+        .player-point-row select, .player-point-row input { width: 110px; text-align: center; }
+        .round-buttons { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
         .report-textarea {
             width: 100%;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.45);
             border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px;
-            padding: 16px;
+            border-radius: 24px;
+            padding: 20px;
             color: #e2e8f0;
-            font-family: monospace;
-            font-size: 0.8rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
             resize: vertical;
         }
-        @media (max-width: 768px) {
-            body { padding: 20px 16px; }
-            .grid { grid-template-columns: 1fr; }
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #a855f7; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -291,7 +296,7 @@
                                 <label><input type="radio" v-model="player.type" value="is"> 🔄 ИС</label>
                                 <label><input type="radio" v-model="player.type" value="adult"> 🦁 Взрослый</label>
                             </div>
-                            <div style="margin-top: 12px; text-align: right;">
+                            <div style="margin-top: 14px; text-align: right;">
                                 <button @click="removePlayer(index)" class="btn btn-danger btn-sm" :disabled="players.length === 1">
                                     <i class="fas fa-trash"></i> Удалить
                                 </button>
@@ -301,7 +306,7 @@
                     <button @click="addPlayer" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Добавить игрока</button>
                 </div>
 
-                <!-- Колонка игр (только поиск) -->
+                <!-- Колонка игр (только поиск, без кнопок фильтрации) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -327,14 +332,11 @@
                                         >
                                             <div class="suggestion-name">
                                                 <span><i class="fas fa-gamepad"></i> {{ game.name }}</span>
-                                                <span style="font-size: 0.85rem; background: #2d2a3e; padding: 4px 10px; border-radius: 40px;">{{ game.rounds }} р.</span>
+                                                <span style="font-size: 0.85rem; background: #2d2a3e; padding: 5px 12px; border-radius: 40px;">{{ game.rounds }} раундов</span>
                                             </div>
                                             <div class="suggestion-details">
-                                                <!-- Метка "Без взрослых" если adults === false -->
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
-                                                <!-- Метка "Можно с 1 котёнком" если solo === true -->
                                                 <span v-if="game.solo" class="tag tag-solo">👤 Можно с 1 котёнком</span>
-                                                <!-- Для всех остальных игр (не solo и adults === true) показываем метку по умолчанию -->
                                                 <span v-if="!game.solo && game.adults" class="tag tag-multi">👥 Для 2+ котят, можно со взрослыми</span>
                                                 <span>⚡ Баллы: {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
                                             </div>
@@ -353,7 +355,7 @@
                                 <div v-for="(round, roundIndex) in gameSession.rounds" :key="roundIndex" class="round-card">
                                     <div class="round-title">
                                         <i class="fas fa-circle"></i> Раунд {{ roundIndex + 1 }}
-                                        <span v-if="gameSession.selectedGame.oncePerHour" style="font-size: 11px; margin-left: 10px;">⭐ +3 в отчёт / +3 игры ИС</span>
+                                        <span v-if="gameSession.selectedGame.oncePerHour" style="font-size: 12px; margin-left: 12px;">⭐ +3 в отчёт / +3 игры ИС</span>
                                     </div>
                                     <div v-for="player in filteredPlayers(gameSession)" :key="player.id" class="player-point-row">
                                         <span class="player-name"><i class="fas fa-user"></i> {{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
@@ -362,7 +364,7 @@
                                             <option v-for="point in gameSession.selectedGame.points" :value="point">{{ point }}</option>
                                             <option value="0">0</option>
                                         </select>
-                                        <input v-else type="number" v-model.number="round.points[player.id]" placeholder="Баллы" class="modern-input" style="width: 100px;">
+                                        <input v-else type="number" v-model.number="round.points[player.id]" placeholder="Баллы" class="modern-input" style="width: 110px;">
                                     </div>
                                 </div>
                                 <div class="round-buttons">
@@ -392,11 +394,7 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // База игр с флагами adults, solo, oncePerHour (полностью соответствует заданию)
-        // Списки:
-        // - Без взрослых: Догонялки, Липучки, Составь слово, Погоня, Облом, Охота на бабочек, Цель, Словарик, Кладоискатели
-        // - С 1 котёнком: Котячий патруль, Расшифруй, Облом, Лабиринт, Охота на бабочек, Клановое имя, Цель, Словарик, Песочница, Букварь
-        // Все остальные (например Путаница, Викторина, Поле чудес, Займи клетку, Три буквы, Три факта, Дай Пять, Считалочка) – для 2+ котят и со взрослыми.
+        // Полный список игр с корректными флагами adults и solo
         const games = [
             { name: "Путаница", solo: false, adults: true, points: [2,1], rounds: 5 },
             { name: "Догонялки", solo: false, adults: false, points: [7,3], rounds: 3 },
@@ -438,7 +436,6 @@
             };
         }
 
-        // Применяет фильтр только по тексту (без кнопок категорий)
         function applyFilter(session) {
             let filtered = [...games];
             const query = session.searchQuery.trim().toLowerCase();
@@ -453,7 +450,6 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                // Совместимость выбранных игроков с игрой (для предупреждений)
                 function isGameCompatible(session) {
                     if (!session.selectedGame) return true;
                     const game = session.selectedGame;
@@ -502,7 +498,6 @@
                     }
                 }
 
-                // Генерация отчёта (логика полностью сохранена)
                 const gameReport = computed(() => {
                     const lines = [];
                     const now = new Date();
@@ -606,7 +601,6 @@
                     if (!e.target.closest('.search-container')) gameSessions.value.forEach(s => s.showSuggestions = false);
                 });
 
-                // Инициализация
                 gameSessions.value.forEach(s => applyFilter(s));
 
                 return {
