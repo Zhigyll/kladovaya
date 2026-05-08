@@ -307,7 +307,6 @@
                                             <div class="suggestion-details">
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
                                                 <span v-if="game.canBeSolo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
-                                                <span v-if="!game.canBeSolo && game.adults" class="tag tag-multi">👥 Для 2+ котят</span>
                                                 <span>⚡ {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
                                             </div>
                                         </div>
@@ -315,8 +314,8 @@
                                 </div>
                             </div>
 
-                            <!-- Только проверка на взрослых (без ограничений по количеству) -->
-                            <div v-if="gameSession.selectedGame && hasAdultsInGame(gameSession)" class="warning-badge">
+                            <!-- ТОЛЬКО ПРОВЕРКА НА ВЗРОСЛЫХ (без ограничений по количеству) -->
+                            <div v-if="gameSession.selectedGame && !gameSession.selectedGame.adults && hasAdultsInGame(gameSession)" class="warning-badge">
                                 ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
                             </div>
 
@@ -326,7 +325,7 @@
                                         <i class="fas fa-circle" style="font-size: 8px;"></i> Раунд {{ roundIndex + 1 }}
                                         <span v-if="gameSession.selectedGame.oncePerHour" style="margin-left: 8px; color: #c084fc;">⭐ +3 в отчёт</span>
                                     </div>
-                                    <div v-for="player in filteredPlayers(gameSession)" :key="player.id" class="player-point-row">
+                                    <div v-for="player in players" :key="player.id" class="player-point-row">
                                         <span class="player-name">{{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
                                         <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
                                             <option :value="null">—</option>
@@ -370,8 +369,6 @@
         const { createApp, ref, computed } = Vue;
 
         // ПОЛНЫЙ СПИСОК ИГР
-        // canBeSolo: true — можно играть с 1 котёнком (нет ограничений на количество)
-        // canBeSolo: false — условно, но по факту ограничений нет, просто метка для красоты
         const games = [
             { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
             { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
@@ -427,12 +424,8 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                // Проверка только на наличие взрослых (без ограничений по количеству)
+                // Проверяем, есть ли взрослые среди выбранных игроков в этой сессии
                 function hasAdultsInGame(session) {
-                    if (!session.selectedGame) return false;
-                    if (session.selectedGame.adults) return false; // взрослые разрешены
-                    
-                    // Ищем взрослых среди выбранных игроков
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
                         Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
@@ -557,11 +550,6 @@
                     }
                 }
                 function removeRound(idx) { const s = gameSessions.value[idx]; if (s.rounds.length > 1) s.rounds.pop(); }
-                function filteredPlayers(session) {
-                    if (!session.selectedGame) return players.value;
-                    if (!session.selectedGame.adults) return players.value.filter(p => p.type !== 'adult');
-                    return players.value;
-                }
                 function copyReport() { navigator.clipboard.writeText(gameReport.value); alert('Отчёт скопирован'); }
                 
                 document.addEventListener('click', (e) => {
@@ -575,7 +563,7 @@
                     addPlayer, removePlayer, addGameSession, removeGameSessionByIndex,
                     updateFilteredGames, selectGame,
                     addRound, addCustomRounds, removeRound,
-                    filteredPlayers, copyReport,
+                    copyReport,
                     hasAdultsInGame
                 };
             }
