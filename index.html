@@ -74,6 +74,7 @@
             background: #1a1a28;
             border-radius: 18px;
             padding: 14px;
+            margin-bottom: 12px;
         }
         .player-fields {
             display: flex;
@@ -188,7 +189,6 @@
         }
         .tag-adult-no { background: rgba(239,68,68,0.15); color: #f87171; }
         .tag-solo { background: rgba(168,85,247,0.15); color: #c084fc; }
-        .tag-multi { background: rgba(59,130,246,0.15); color: #60a5fa; }
         .warning-badge {
             background: rgba(239,68,68,0.1);
             color: #fca5a5;
@@ -308,13 +308,14 @@
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
                                                 <span v-if="game.canBeSolo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
                                                 <span>⚡ {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
+                                                <span v-if="game.oncePerHour" style="color: #c084fc;">⭐ 3 балла в отчёт / +3 игры ИС</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- ТОЛЬКО ПРОВЕРКА НА ВЗРОСЛЫХ (без ограничений по количеству) -->
+                            <!-- Проверка на взрослых -->
                             <div v-if="gameSession.selectedGame && !gameSession.selectedGame.adults && hasAdultsInGame(gameSession)" class="warning-badge">
                                 ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
                             </div>
@@ -368,7 +369,6 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // ПОЛНЫЙ СПИСОК ИГР
         const games = [
             { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
             { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
@@ -424,7 +424,6 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                // Проверяем, есть ли взрослые среди выбранных игроков в этой сессии
                 function hasAdultsInGame(session) {
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
@@ -458,6 +457,7 @@
                     lines.push(`Игровик: ID Игровика | [catID]`);
                     lines.push(`Время: время начала игр - время конца игр; ${dateStr}`);
                     
+                    // Подсчёт игр для строки "Игра:"
                     const gameTotals = {};
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
@@ -481,6 +481,7 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
+                    // Реальные баллы игроков
                     const playerRealScores = {};
                     players.value.forEach(p => playerRealScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -493,31 +494,64 @@
                         }
                     });
                     
+                    // Посещённые игры для ИС:
+                    // - За обычную игру: 1 посещённая игра за ВСЕ раунды
+                    // - За игру раз в 1,5 часа: 3 посещённых игры за ВСЕ раунды
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             const game = session.selectedGame;
+                            // Проверяем, участвовал ли ИС хотя бы в одном раунде этой игры
+                            let isPlayed = false;
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
                                     if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
-                                        isVisitedGames[pid] = (isVisitedGames[pid] || 0) + (game.oncePerHour ? 3 : 1);
+                                        isPlayed = true;
                                     }
                                 }
                             });
+                            if (isPlayed) {
+                                if (game.oncePerHour) {
+                                    // Игры раз в 1,5 часа: +3 посещённых игры
+                                    session.rounds.forEach(round => {
+                                        for (let [pid, score] of Object.entries(round.points)) {
+                                            if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
+                                                isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 3;
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    // Обычные игры: +1 посещённая игра за всю игру
+                                    const isPlayers = new Set();
+                                    session.rounds.forEach(round => {
+                                        for (let [pid, score] of Object.entries(round.points)) {
+                                            if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
+                                                isPlayers.add(pid);
+                                            }
+                                        }
+                                    });
+                                    isPlayers.forEach(pid => {
+                                        isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 1;
+                                    });
+                                }
+                            }
                         }
                     });
                     
+                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0})`);
                         }
                     });
+                    // БС
                     players.value.forEach(player => {
                         if (player.type === 'bs') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0}) [БС]`);
                         }
                     });
+                    // ИС
                     players.value.forEach(player => {
                         if (player.type === 'is') {
                             lines.push(`${player.playerId || 'ID'} | [cat${player.playerId || 'ID'}] (${playerRealScores[player.id] || 0}; ${isVisitedGames[player.id] || 0}) [ИС]`);
@@ -536,7 +570,7 @@
                     if (gameSessions.value.length > 1) {
                         gameSessions.value.splice(index, 1);
                     } else {
-                        alert("Нельзя удалить последнюю игру. Добавьте новую игру перед удалением этой.");
+                        alert("Нельзя удалить последнюю игру. Добавьте новую игру.");
                     }
                 }
                 function addRound(idx) { const s = gameSessions.value[idx]; if (s.selectedGame) s.rounds.push({ points: {} }); }
