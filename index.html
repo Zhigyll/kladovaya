@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Игровой отчёт — полная версия</title>
+    <title>Игровой отчёт — поиск с метками</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -139,9 +139,9 @@
         .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
         .btn-block { width: 100%; justify-content: center; }
         
-        /* поиск и фильтры — увеличенные */
-        .search-wrapper { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-        .search-container { position: relative; flex: 1; min-width: 220px; }
+        /* поиск — увеличенный */
+        .search-wrapper { margin-bottom: 20px; }
+        .search-container { position: relative; }
         .search-container .big-search {
             width: 100%;
             background: rgba(0,0,0,0.5);
@@ -156,35 +156,8 @@
             border-color: #a855f7;
             box-shadow: 0 0 0 4px rgba(168,85,247,0.3);
         }
-        .filter-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .filter-btn {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 60px;
-            padding: 10px 20px;
-            color: #e2e8f0;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .filter-btn.active {
-            background: #a855f7;
-            border-color: #a855f7;
-            color: white;
-            box-shadow: 0 2px 8px rgba(168,85,247,0.4);
-        }
-        .filter-btn:hover {
-            background: rgba(168,85,247,0.6);
-            transform: translateY(-1px);
-        }
         
-        /* выпадающий список — крупный и читаемый */
+        /* выпадающий список — крупный */
         .suggestions {
             position: absolute;
             top: 100%;
@@ -238,7 +211,6 @@
             font-size: 0.75rem;
             font-weight: 600;
         }
-        .tag-adult-ok { background: rgba(34,197,94,0.25); color: #86efac; }
         .tag-adult-no { background: rgba(239,68,68,0.25); color: #fca5a5; }
         .tag-solo { background: rgba(168,85,247,0.3); color: #d8b4fe; }
         .tag-multi { background: rgba(59,130,246,0.25); color: #93c5fd; }
@@ -290,7 +262,6 @@
         @media (max-width: 768px) {
             body { padding: 20px 16px; }
             .grid { grid-template-columns: 1fr; }
-            .search-wrapper { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -330,7 +301,7 @@
                     <button @click="addPlayer" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Добавить игрока</button>
                 </div>
 
-                <!-- Колонка игр с увеличенным интерфейсом -->
+                <!-- Колонка игр (только поиск) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -356,33 +327,20 @@
                                         >
                                             <div class="suggestion-name">
                                                 <span><i class="fas fa-gamepad"></i> {{ game.name }}</span>
-                                                <span style="font-size: 0.85rem; background: #2d2a3e; padding: 4px 10px; border-radius: 40px;">{{ game.rounds }} раундов</span>
+                                                <span style="font-size: 0.85rem; background: #2d2a3e; padding: 4px 10px; border-radius: 40px;">{{ game.rounds }} р.</span>
                                             </div>
                                             <div class="suggestion-details">
-                                                <span class="tag" :class="game.adults ? 'tag-adult-ok' : 'tag-adult-no'">
-                                                    {{ game.adults ? '✅ Можно со взрослыми' : '🚫 Без взрослых' }}
-                                                </span>
-                                                <span class="tag" :class="game.solo ? 'tag-solo' : 'tag-multi'">
-                                                    {{ game.solo ? '👤 Для 1 котёнка' : '👥 Для 2+ котят' }}
-                                                </span>
+                                                <!-- Метка "Без взрослых" если adults === false -->
+                                                <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
+                                                <!-- Метка "Можно с 1 котёнком" если solo === true -->
+                                                <span v-if="game.solo" class="tag tag-solo">👤 Можно с 1 котёнком</span>
+                                                <!-- Для всех остальных игр (не solo и adults === true) показываем метку по умолчанию -->
+                                                <span v-if="!game.solo && game.adults" class="tag tag-multi">👥 Для 2+ котят, можно со взрослыми</span>
                                                 <span>⚡ Баллы: {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1"><i class="fas fa-trash"></i> Удалить</button>
-                            </div>
-                            <!-- Кнопки фильтрации (переключатели) -->
-                            <div class="filter-group">
-                                <button @click="setFilter(idx, 'all')" :class="{ 'active': gameSession.currentFilter === 'all' }" class="filter-btn">
-                                    📋 Все игры
-                                </button>
-                                <button @click="setFilter(idx, 'no_adults')" :class="{ 'active': gameSession.currentFilter === 'no_adults' }" class="filter-btn">
-                                    🚫 Без взрослых
-                                </button>
-                                <button @click="setFilter(idx, 'solo')" :class="{ 'active': gameSession.currentFilter === 'solo' }" class="filter-btn">
-                                    👤 Для 1 котёнка
-                                </button>
                             </div>
 
                             <!-- Предупреждение о несовместимости -->
@@ -434,7 +392,11 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // База игр с правильными флагами (adults, solo, oncePerHour)
+        // База игр с флагами adults, solo, oncePerHour (полностью соответствует заданию)
+        // Списки:
+        // - Без взрослых: Догонялки, Липучки, Составь слово, Погоня, Облом, Охота на бабочек, Цель, Словарик, Кладоискатели
+        // - С 1 котёнком: Котячий патруль, Расшифруй, Облом, Лабиринт, Охота на бабочек, Клановое имя, Цель, Словарик, Песочница, Букварь
+        // Все остальные (например Путаница, Викторина, Поле чудес, Займи клетку, Три буквы, Три факта, Дай Пять, Считалочка) – для 2+ котят и со взрослыми.
         const games = [
             { name: "Путаница", solo: false, adults: true, points: [2,1], rounds: 5 },
             { name: "Догонялки", solo: false, adults: false, points: [7,3], rounds: 3 },
@@ -472,19 +434,13 @@
                 selectedGame: null,
                 filteredGames: [],
                 showSuggestions: false,
-                rounds: [],
-                currentFilter: 'all'
+                rounds: []
             };
         }
 
-        // Применяет фильтр (категория + текст)
+        // Применяет фильтр только по тексту (без кнопок категорий)
         function applyFilter(session) {
             let filtered = [...games];
-            if (session.currentFilter === 'no_adults') {
-                filtered = filtered.filter(g => !g.adults);
-            } else if (session.currentFilter === 'solo') {
-                filtered = filtered.filter(g => g.solo);
-            }
             const query = session.searchQuery.trim().toLowerCase();
             if (query) {
                 filtered = filtered.filter(g => g.name.toLowerCase().includes(query));
@@ -497,7 +453,7 @@
                 const players = ref([]);
                 const gameSessions = ref([createGameSession()]);
 
-                // Совместимость выбранных игроков с игрой
+                // Совместимость выбранных игроков с игрой (для предупреждений)
                 function isGameCompatible(session) {
                     if (!session.selectedGame) return true;
                     const game = session.selectedGame;
@@ -535,13 +491,6 @@
                     applyFilter(session);
                 }
 
-                function setFilter(idx, filterType) {
-                    const session = gameSessions.value[idx];
-                    session.currentFilter = filterType;
-                    applyFilter(session);
-                    session.showSuggestions = true;
-                }
-
                 function selectGame(idx, game) {
                     const session = gameSessions.value[idx];
                     session.selectedGame = game;
@@ -553,7 +502,7 @@
                     }
                 }
 
-                // Генерация отчёта (полная логика)
+                // Генерация отчёта (логика полностью сохранена)
                 const gameReport = computed(() => {
                     const lines = [];
                     const now = new Date();
@@ -657,13 +606,13 @@
                     if (!e.target.closest('.search-container')) gameSessions.value.forEach(s => s.showSuggestions = false);
                 });
 
-                // Инициализация фильтрации для всех сессий
+                // Инициализация
                 gameSessions.value.forEach(s => applyFilter(s));
 
                 return {
                     players, gameSessions, gameReport,
                     addPlayer, removePlayer, addGameSession, removeGameSession,
-                    setFilter, updateFilteredGames, selectGame,
+                    updateFilteredGames, selectGame,
                     addRound, addCustomRounds, removeRound,
                     filteredPlayers, copyReport,
                     isGameCompatible, getWarningMessage
