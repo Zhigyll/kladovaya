@@ -235,6 +235,7 @@
         .search-container {
             position: relative;
             flex: 1;
+            min-width: 200px;
         }
 
         .suggestions {
@@ -250,15 +251,30 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
 
+        .expanded-suggestions {
+            max-height: 400px;
+            min-width: 320px;
+            width: 100%;
+            background: #1e1b2e;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
         .suggestion-item {
             padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             color: #e2e8f0;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
         }
 
         .suggestion-item:hover {
             background: rgba(168, 85, 247, 0.3);
+            transform: translateX(4px);
         }
 
         .rounds-list {
@@ -398,7 +414,7 @@
                     </button>
                 </div>
 
-                <!-- Блок игр -->
+                <!-- Блок игр (расширенный) -->
                 <div class="glass-card">
                     <div class="card-header">
                         <h2><i class="fas fa-dice-d6"></i> Игры</h2>
@@ -406,30 +422,38 @@
                     </div>
                     <div class="games-list">
                         <div v-for="(gameSession, idx) in gameSessions" :key="gameSession.id" class="game-item">
-                            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                                <div class="search-container" style="flex: 1;">
+                            <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+                                <div class="search-container" style="flex: 1; min-width: 0;">
                                     <input 
                                         v-model="gameSession.searchQuery" 
                                         @input="filterGames(idx)"
                                         @focus="gameSession.showSuggestions = true"
-                                        placeholder="Поиск игры..."
+                                        placeholder="🔍 Начните вводить название игры..."
                                         class="modern-input"
-                                        style="width: 100%;"
+                                        style="width: 100%; font-size: 1rem; padding: 12px 16px;"
                                     >
-                                    <div v-if="gameSession.showSuggestions && gameSession.filteredGames.length" class="suggestions">
+                                    <div v-if="gameSession.showSuggestions && gameSession.filteredGames.length" class="suggestions expanded-suggestions">
                                         <div 
                                             v-for="game in gameSession.filteredGames" 
                                             :key="game.name"
                                             @click="selectGame(idx, game)"
                                             class="suggestion-item"
                                         >
-                                            <i class="fas fa-gamepad"></i> {{ game.name }} ({{ game.rounds }} раундов)
-                                            <span v-if="game.oncePerHour" style="font-size: 10px; color: #c084fc;"> ⏱️ 3 балла в отчёт / +3 игры ИС</span>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                                <span style="font-weight: 600;"><i class="fas fa-gamepad"></i> {{ game.name }}</span>
+                                                <span style="font-size: 11px; color: #c084fc;">
+                                                    {{ game.rounds }} раундов 
+                                                    <span v-if="game.oncePerHour" style="margin-left: 8px;">⭐ 3/раунд</span>
+                                                </span>
+                                            </div>
+                                            <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                                Баллы: {{ game.points && game.points.length ? game.points.join(', ') : 'ручной ввод' }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1">
-                                    <i class="fas fa-trash"></i>
+                                <button @click="removeGameSession(idx)" class="btn btn-danger btn-sm" :disabled="gameSessions.length === 1" style="flex-shrink: 0;">
+                                    <i class="fas fa-trash"></i> Удалить
                                 </button>
                             </div>
 
@@ -484,8 +508,6 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // Полная база игр
-        // oncePerHour: true — игры раз в 1,5 часа
         const games = [
             { name: "Путаница", solo: false, adults: true, points: [2, 1], rounds: 5 },
             { name: "Догонялки", solo: false, adults: false, points: [7, 3], rounds: 3 },
@@ -534,7 +556,6 @@
 
                 const gameReport = computed(() => {
                     const lines = [];
-                    
                     const now = new Date();
                     const dateStr = `${now.getDate().toString().padStart(2, '0')}.${(now.getMonth() + 1).toString().padStart(2, '0')}.${now.getFullYear().toString().slice(-2)}`;
                     
@@ -542,8 +563,6 @@
                     lines.push(`Игровик: ID Игровика | [catID]`);
                     lines.push(`Время: время начала игр - время конца игр; ${dateStr}`);
                     
-                    // ========== 1. Строка "Игра:" ==========
-                    // Для oncePerHour: каждый раунд = 3 балла в отчёт
                     const gameTotals = {};
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
@@ -551,19 +570,15 @@
                             const roundsCount = session.rounds.length;
                             
                             if (game.oncePerHour) {
-                                // Для игр раз в 1,5 часа: каждый раунд = 3 балла
                                 const totalScore = roundsCount * 3;
                                 if (totalScore > 0) {
                                     gameTotals[game.name] = (gameTotals[game.name] || 0) + totalScore;
                                 }
                             } else {
-                                // Для обычных игр: суммируем реальные баллы всех игроков
                                 let totalGameScore = 0;
                                 session.rounds.forEach(round => {
                                     for (let [pid, score] of Object.entries(round.points)) {
-                                        if (score > 0) {
-                                            totalGameScore += score;
-                                        }
+                                        if (score > 0) totalGameScore += score;
                                     }
                                 });
                                 if (totalGameScore > 0) {
@@ -580,7 +595,6 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
-                    // ========== 2. Баллы игроков (реальные) ==========
                     const playerRealScores = {};
                     players.value.forEach(p => { playerRealScores[p.id] = 0; });
                     
@@ -596,61 +610,6 @@
                         }
                     });
                     
-                    // ========== 3. Распределение баллов взрослых между котятами ==========
-                    const adultTotal = {};
-                    const kittenTotal = {};
-                    players.value.forEach(p => { adultTotal[p.id] = 0; kittenTotal[p.id] = 0; });
-                    
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame && !session.selectedGame.oncePerHour) {
-                            session.rounds.forEach(round => {
-                                const adultsInRound = players.value.filter(p => p.type === 'adult' && round.points[p.id] > 0);
-                                const kittensInRound = players.value.filter(p => (p.type === 'kitten' || p.type === 'bs' || p.type === 'is') && round.points[p.id] > 0);
-                                
-                                if (adultsInRound.length > 0 && kittensInRound.length > 0) {
-                                    adultsInRound.forEach(adult => {
-                                        const pointsToDistribute = round.points[adult.id] || 0;
-                                        const pointsPerKitten = Math.floor(pointsToDistribute / kittensInRound.length);
-                                        kittensInRound.forEach(kitten => {
-                                            if (pointsPerKitten > 0) {
-                                                kittenTotal[kitten.id] = (kittenTotal[kitten.id] || 0) + pointsPerKitten;
-                                            }
-                                        });
-                                    });
-                                }
-                                
-                                players.value.forEach(player => {
-                                    const points = round.points[player.id] || 0;
-                                    if (points > 0) {
-                                        if (player.type === 'adult') {
-                                            adultTotal[player.id] = (adultTotal[player.id] || 0) + points;
-                                        } else {
-                                            kittenTotal[player.id] = (kittenTotal[player.id] || 0) + points;
-                                        }
-                                    }
-                                });
-                            });
-                        } else if (session.selectedGame && session.selectedGame.oncePerHour) {
-                            // Для oncePerHour игр взрослые баллы НЕ распределяются
-                            session.rounds.forEach(round => {
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0) {
-                                        const player = players.value.find(p => p.id === pid);
-                                        if (player && player.type !== 'adult') {
-                                            kittenTotal[pid] = (kittenTotal[pid] || 0) + score;
-                                        } else if (player && player.type === 'adult') {
-                                            adultTotal[pid] = (adultTotal[pid] || 0) + score;
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    // Финальные баллы = реальные баллы
-                    const finalScores = { ...playerRealScores };
-                    
-                    // ========== 4. Посещённые игры для ИС ==========
                     const isVisitedGames = {};
                     players.value.forEach(p => { isVisitedGames[p.id] = 0; });
                     
@@ -663,10 +622,8 @@
                                         const player = players.value.find(p => p.id === pid);
                                         if (player && player.type === 'is') {
                                             if (game.oncePerHour) {
-                                                // За каждый раунд oncePerHour: +3 посещённые игры
                                                 isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 3;
                                             } else {
-                                                // За обычные игры: +1 за раунд
                                                 isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 1;
                                             }
                                         }
@@ -676,29 +633,25 @@
                         }
                     });
                     
-                    // ========== 5. Формируем строки отчёта ==========
-                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
-                            const totalPoints = finalScores[player.id] || 0;
+                            const totalPoints = playerRealScores[player.id] || 0;
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints})`);
                         }
                     });
                     
-                    // БС
                     players.value.forEach(player => {
                         if (player.type === 'bs') {
-                            const totalPoints = finalScores[player.id] || 0;
+                            const totalPoints = playerRealScores[player.id] || 0;
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}) [БС]`);
                         }
                     });
                     
-                    // ИС (с посещёнными играми)
                     players.value.forEach(player => {
                         if (player.type === 'is') {
-                            const totalPoints = finalScores[player.id] || 0;
+                            const totalPoints = playerRealScores[player.id] || 0;
                             const visited = isVisitedGames[player.id] || 0;
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}; ${visited}) [ИС]`);
@@ -709,12 +662,7 @@
                 });
 
                 function addPlayer() {
-                    players.value.push({ 
-                        id: generateId(), 
-                        name: '', 
-                        playerId: '',
-                        type: 'kitten'
-                    });
+                    players.value.push({ id: generateId(), name: '', playerId: '', type: 'kitten' });
                 }
 
                 function removePlayer(index) {
@@ -751,7 +699,6 @@
                     session.selectedGame = game;
                     session.searchQuery = game.name;
                     session.showSuggestions = false;
-                    
                     session.rounds = [];
                     for (let i = 0; i < game.rounds; i++) {
                         session.rounds.push({ points: {} });
@@ -760,16 +707,12 @@
 
                 function removeRound(sessionIndex) {
                     const session = gameSessions.value[sessionIndex];
-                    if (session.rounds.length > 1) {
-                        session.rounds.pop();
-                    }
+                    if (session.rounds.length > 1) session.rounds.pop();
                 }
 
                 function addRound(sessionIndex) {
                     const session = gameSessions.value[sessionIndex];
-                    if (session.selectedGame) {
-                        session.rounds.push({ points: {} });
-                    }
+                    if (session.selectedGame) session.rounds.push({ points: {} });
                 }
 
                 function addCustomRounds(sessionIndex) {
@@ -777,9 +720,7 @@
                     if (session.selectedGame) {
                         const count = parseInt(prompt('Сколько раундов добавить?', '1'));
                         if (count > 0) {
-                            for (let i = 0; i < count; i++) {
-                                session.rounds.push({ points: {} });
-                            }
+                            for (let i = 0; i < count; i++) session.rounds.push({ points: {} });
                         }
                     }
                 }
@@ -793,34 +734,21 @@
                 }
 
                 function copyReport() {
-                    const text = gameReport.value;
-                    navigator.clipboard.writeText(text);
+                    navigator.clipboard.writeText(gameReport.value);
                     alert('Отчёт скопирован в буфер обмена!');
                 }
 
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.search-container')) {
-                        gameSessions.value.forEach(session => {
-                            session.showSuggestions = false;
-                        });
+                        gameSessions.value.forEach(session => { session.showSuggestions = false; });
                     }
                 });
 
                 return {
-                    players,
-                    gameSessions,
-                    gameReport,
-                    addPlayer,
-                    removePlayer,
-                    addGameSession,
-                    removeGameSession,
-                    filterGames,
-                    selectGame,
-                    removeRound,
-                    addRound,
-                    addCustomRounds,
-                    filteredPlayers,
-                    copyReport
+                    players, gameSessions, gameReport,
+                    addPlayer, removePlayer, addGameSession, removeGameSession,
+                    filterGames, selectGame, removeRound, addRound, addCustomRounds,
+                    filteredPlayers, copyReport
                 };
             }
         }).mount('#app');
