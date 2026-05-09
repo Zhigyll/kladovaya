@@ -369,30 +369,32 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
+        // Игры с oncePerHour: true — дают (3) в отчёт
+        // Все остальные игры — дают (1) в отчёт (независимо от количества раундов)
         const games = [
-            { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: 1 },
-            { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, oncePerHour: true, reportScore: 3 },
-            { name: "Поле чудес", adults: true, points: [10,5,0], rounds: 3, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Липучки", adults: false, points: [4,2,0], rounds: 3, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Составь слово", adults: false, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Расшифруй", adults: true, points: [], rounds: 5, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Займи клетку", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Погоня", adults: false, points: [5,2,0], rounds: 3, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Облом", adults: false, points: [4,1,0], rounds: 5, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Лабиринт", adults: true, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Охота на бабочек", adults: false, points: [], rounds: 1, canBeSolo: true, oncePerHour: true, reportScore: 3 },
-            { name: "Три буквы", adults: true, points: [3,1,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Клановое имя", adults: true, points: [3,0], rounds: 5, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Цель", adults: false, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Словарик", adults: false, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false, reportScore: null },
-            { name: "Песочница", adults: true, points: [], rounds: 1, canBeSolo: true, oncePerHour: true, reportScore: 3 },
-            { name: "Три факта", adults: true, points: [5,3,0], rounds: 3, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Дай Пять", adults: true, points: [15,7,0], rounds: 3, canBeSolo: false, oncePerHour: true, reportScore: 3 },
-            { name: "Кладоискатели", adults: false, points: [20,10,0], rounds: 1, canBeSolo: true, oncePerHour: true, reportScore: 3 },
-            { name: "Считалочка", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false, reportScore: null },
-            { name: "Букварь", adults: true, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false, reportScore: null }
+            { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Поле чудес", adults: true, points: [10,5,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Липучки", adults: false, points: [4,2,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Составь слово", adults: false, points: [4,2,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Расшифруй", adults: true, points: [], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Займи клетку", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Погоня", adults: false, points: [5,2,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Облом", adults: false, points: [4,1,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Лабиринт", adults: true, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false },
+            { name: "Охота на бабочек", adults: false, points: [], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Три буквы", adults: true, points: [3,1,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Клановое имя", adults: true, points: [3,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Цель", adults: false, points: [5,3,1,0], rounds: 3, canBeSolo: true, oncePerHour: false },
+            { name: "Словарик", adults: false, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false },
+            { name: "Песочница", adults: true, points: [], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Три факта", adults: true, points: [5,3,0], rounds: 3, canBeSolo: false, oncePerHour: false },
+            { name: "Дай Пять", adults: true, points: [15,7,0], rounds: 3, canBeSolo: false, oncePerHour: true },
+            { name: "Кладоискатели", adults: false, points: [20,10,0], rounds: 1, canBeSolo: true, oncePerHour: true },
+            { name: "Считалочка", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, oncePerHour: false },
+            { name: "Букварь", adults: true, points: [4,0], rounds: 5, canBeSolo: true, oncePerHour: false }
         ];
 
         function generateId() {
@@ -473,21 +475,13 @@
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             const game = session.selectedGame;
-                            // Если есть reportScore - используем его (фикс за ВСЕ раунды)
-                            if (game.reportScore !== null && game.reportScore !== undefined) {
-                                if (game.reportScore > 0) {
-                                    gameTotals[game.name] = (gameTotals[game.name] || 0) + game.reportScore;
-                                }
+                            // Если oncePerHour: true — даём (3)
+                            if (game.oncePerHour) {
+                                gameTotals[game.name] = (gameTotals[game.name] || 0) + 3;
                             } 
-                            // Иначе обычные игры: сумма всех реальных баллов
+                            // Все остальные игры — даём (1)
                             else {
-                                let totalGameScore = 0;
-                                session.rounds.forEach(round => {
-                                    for (let score of Object.values(round.points)) {
-                                        if (score > 0) totalGameScore += score;
-                                    }
-                                });
-                                if (totalGameScore > 0) gameTotals[game.name] = (gameTotals[game.name] || 0) + totalGameScore;
+                                gameTotals[game.name] = (gameTotals[game.name] || 0) + 1;
                             }
                         }
                     });
