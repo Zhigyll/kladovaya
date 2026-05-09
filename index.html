@@ -309,7 +309,7 @@
                                                 <span v-if="!game.adults" class="tag tag-adult-no">🚫 Без взрослых</span>
                                                 <span v-if="game.canBeSolo" class="tag tag-solo">👤 Можно с 1 (и с неск.)</span>
                                                 <span>⚡ {{ game.points && game.points.length ? game.points.join(', ') : '✏️ ручной ввод' }}</span>
-                                                <span v-if="game.isSpecial" style="color: #c084fc;">⭐ +3 игры ИС / 3 балла за раунд</span>
+                                                <span v-if="game.isSpecial" style="color: #c084fc;">⭐ 3 балла за раунд</span>
                                             </div>
                                         </div>
                                     </div>
@@ -318,7 +318,7 @@
 
                             <!-- Предупреждение о взрослых -->
                             <div v-if="gameSession.selectedGame && !gameSession.selectedGame.adults && hasAdultsInGame(gameSession)" class="warning-badge">
-                                ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым! Уберите взрослых игроков.
+                                ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
                             </div>
 
                             <div v-if="gameSession.selectedGame" class="rounds-list">
@@ -369,8 +369,6 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
-        // Полный список игр
-        // isSpecial: true — игры раз в 1,5 часа (каждый раунд даёт 3 балла в отчёт)
         const games = [
             { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
             { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
@@ -437,7 +435,6 @@
                 function hasAdultsInGame(session) {
                     if (!session.selectedGame) return false;
                     if (session.selectedGame.adults === true) return false;
-                    
                     let selectedPlayerIds = new Set();
                     session.rounds.forEach(round => {
                         Object.keys(round.points).forEach(pid => selectedPlayerIds.add(pid));
@@ -470,26 +467,17 @@
                     lines.push(`Игровик: ID Игровика | [catID]`);
                     lines.push(`Время: время начала игр - время конца игр; ${dateStr}`);
                     
-                    // Подсчёт игр для строки "Игра:"
                     const gameTotals = {};
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             const game = session.selectedGame;
                             const roundsCount = session.rounds.length;
-                            
                             if (game.isSpecial) {
-                                // Игры раз в 1,5 часа: каждый раунд даёт 3 балла
                                 const score = roundsCount * 3;
-                                if (score > 0) {
-                                    gameTotals[game.name] = (gameTotals[game.name] || 0) + score;
-                                }
+                                if (score > 0) gameTotals[game.name] = (gameTotals[game.name] || 0) + score;
                             } else {
-                                // Обычные игры: количество полных комплектов раундов
-                                const norm = game.normRounds;
-                                const fullSets = Math.floor(roundsCount / norm);
-                                if (fullSets > 0) {
-                                    gameTotals[game.name] = (gameTotals[game.name] || 0) + fullSets;
-                                }
+                                const fullSets = Math.floor(roundsCount / game.normRounds);
+                                if (fullSets > 0) gameTotals[game.name] = (gameTotals[game.name] || 0) + fullSets;
                             }
                         }
                     });
@@ -497,10 +485,8 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
-                    // Только котята получают баллы от игр
                     const kittenScores = {};
                     players.value.forEach(p => kittenScores[p.id] = 0);
-                    
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
@@ -516,7 +502,6 @@
                         }
                     });
                     
-                    // Распределение баллов взрослых только между котятами
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
@@ -526,15 +511,11 @@
                                     if (score > 0) {
                                         const player = players.value.find(p => p.id === pid);
                                         if (player) {
-                                            if (player.type === 'adult') {
-                                                adultsInRound.push({ pid, score });
-                                            } else if (player.type === 'kitten') {
-                                                kittensInRound.push(pid);
-                                            }
+                                            if (player.type === 'adult') adultsInRound.push({ pid, score });
+                                            else if (player.type === 'kitten') kittensInRound.push(pid);
                                         }
                                     }
                                 }
-                                
                                 if (adultsInRound.length > 0 && kittensInRound.length > 0) {
                                     adultsInRound.forEach(adult => {
                                         const pointsPerKitten = Math.floor(adult.score / kittensInRound.length);
@@ -547,7 +528,6 @@
                         }
                     });
                     
-                    // Посещённые игры для ИС
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -562,16 +542,11 @@
                                 }
                             });
                             isPlayers.forEach(pid => {
-                                if (game.isSpecial) {
-                                    isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 3;
-                                } else {
-                                    isVisitedGames[pid] = (isVisitedGames[pid] || 0) + 1;
-                                }
+                                isVisitedGames[pid] = (isVisitedGames[pid] || 0) + (game.isSpecial ? 3 : 1);
                             });
                         }
                     });
                     
-                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             const totalPoints = Math.round(kittenScores[player.id] || 0);
@@ -580,7 +555,6 @@
                         }
                     });
                     
-                    // БС
                     const bsScores = {};
                     players.value.forEach(p => bsScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -602,7 +576,6 @@
                         }
                     });
                     
-                    // ИС
                     const isScores = {};
                     players.value.forEach(p => isScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -635,20 +608,15 @@
                 }
                 function addGameSession() { gameSessions.value.push(createGameSession()); }
                 function removeGameSessionByIndex(index) { 
-                    if (gameSessions.value.length > 1) {
-                        gameSessions.value.splice(index, 1);
-                    } else {
-                        alert("Нельзя удалить последнюю игру. Добавьте новую игру.");
-                    }
+                    if (gameSessions.value.length > 1) gameSessions.value.splice(index, 1);
+                    else alert("Нельзя удалить последнюю игру. Добавьте новую игру.");
                 }
                 function addRound(idx) { const s = gameSessions.value[idx]; if (s.selectedGame) s.rounds.push({ points: {} }); }
                 function addCustomRounds(idx) {
                     const s = gameSessions.value[idx];
                     if (s.selectedGame) {
                         let cnt = parseInt(prompt('Сколько раундов добавить?', '1'));
-                        if (!isNaN(cnt) && cnt > 0) {
-                            for(let i=0;i<cnt;i++) s.rounds.push({ points: {} });
-                        }
+                        if (!isNaN(cnt) && cnt > 0) for(let i=0;i<cnt;i++) s.rounds.push({ points: {} });
                     }
                 }
                 function removeRound(idx) { const s = gameSessions.value[idx]; if (s.rounds.length > 1) s.rounds.pop(); }
