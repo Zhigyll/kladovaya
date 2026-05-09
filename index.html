@@ -328,10 +328,7 @@
                                     </div>
                                     <div v-for="player in getPlayersForGame(gameSession.selectedGame)" :key="player.id" class="player-point-row">
                                         <span class="player-name">{{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
-                                        <!-- СПЕЦИАЛЬНО ДЛЯ ПУТАНИЦЫ: ВСЕГДА РУЧНОЙ ВВОД -->
-                                        <input v-if="gameSession.selectedGame.name === 'Путаница'" type="number" v-model.number="round.points[player.id]" placeholder="Баллы" style="width: 85px; background:#0a0a12; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; color:white; text-align:center;">
-                                        <!-- ДЛЯ ВСЕХ ОСТАЛЬНЫХ: выпадающий список если есть points -->
-                                        <select v-else-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
+                                        <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
                                             <option :value="null">—</option>
                                             <option v-for="point in gameSession.selectedGame.points" :value="point">{{ point }}</option>
                                             <option value="0">0</option>
@@ -373,7 +370,7 @@
         const { createApp, ref, computed } = Vue;
 
         const games = [
-            { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
+            { name: "Путаница", adults: true, points: [], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
             { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
             { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
             { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1 },
@@ -488,7 +485,6 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
-                    // Подсчёт баллов котят
                     const kittenScores = {};
                     players.value.forEach(p => kittenScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -506,7 +502,6 @@
                         }
                     });
                     
-                    // Распределение баллов взрослых только между котятами
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
@@ -533,7 +528,6 @@
                         }
                     });
                     
-                    // Посещённые игры для ИС
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -553,7 +547,6 @@
                         }
                     });
                     
-                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             const totalPoints = Math.round(kittenScores[player.id] || 0);
@@ -562,7 +555,6 @@
                         }
                     });
                     
-                    // БС
                     const bsScores = {};
                     players.value.forEach(p => bsScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -584,7 +576,6 @@
                         }
                     });
                     
-                    // ИС
                     const isScores = {};
                     players.value.forEach(p => isScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
