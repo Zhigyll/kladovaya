@@ -316,7 +316,6 @@
                                 </div>
                             </div>
 
-                            <!-- Предупреждение о взрослых -->
                             <div v-if="gameSession.selectedGame && !gameSession.selectedGame.adults && hasAdultsInGame(gameSession)" class="warning-badge">
                                 ⚠️ В игре "{{ gameSession.selectedGame.name }}" нельзя участвовать взрослым!
                             </div>
@@ -328,7 +327,8 @@
                                     </div>
                                     <div v-for="player in getPlayersForGame(gameSession.selectedGame)" :key="player.id" class="player-point-row">
                                         <span class="player-name">{{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
-                                        <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
+                                        <input v-if="gameSession.selectedGame.name === 'Путаница'" type="number" v-model.number="round.points[player.id]" placeholder="Баллы" style="width: 85px; background:#0a0a12; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:6px; color:white; text-align:center;">
+                                        <select v-else-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
                                             <option :value="null">—</option>
                                             <option v-for="point in gameSession.selectedGame.points" :value="point">{{ point }}</option>
                                             <option value="0">0</option>
@@ -369,30 +369,33 @@
     <script>
         const { createApp, ref, computed } = Vue;
 
+        // Параметры игр:
+        // normRounds - сколько раундов нужно для 1 "комплекта"
+        // reportMultiplier - во сколько раз увеличить результат (для Дай Пять 3 раунда -> 3, значит множитель 3)
         const games = [
-            { name: "Путаница", adults: true, points: [], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
-            { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1 },
-            { name: "Поле чудес", adults: true, points: [10,5,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
-            { name: "Липучки", adults: false, points: [4,2,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
-            { name: "Составь слово", adults: false, points: [4,2,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Расшифруй", adults: true, points: [], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5 },
-            { name: "Займи клетку", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Погоня", adults: false, points: [5,2,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
-            { name: "Облом", adults: false, points: [4,1,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5 },
-            { name: "Лабиринт", adults: true, points: [5,3,1,0], rounds: 3, canBeSolo: true, isSpecial: false, normRounds: 3 },
-            { name: "Охота на бабочек", adults: false, points: [], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1 },
-            { name: "Три буквы", adults: true, points: [3,1,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Клановое имя", adults: true, points: [3,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5 },
-            { name: "Цель", adults: false, points: [5,3,1,0], rounds: 3, canBeSolo: true, isSpecial: false, normRounds: 3 },
-            { name: "Словарик", adults: false, points: [4,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5 },
-            { name: "Песочница", adults: true, points: [], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1 },
-            { name: "Три факта", adults: true, points: [5,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3 },
-            { name: "Дай Пять", adults: true, points: [15,7,0], rounds: 3, canBeSolo: false, isSpecial: true, normRounds: 3 },
-            { name: "Кладоискатели", adults: false, points: [20,10,0], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1 },
-            { name: "Считалочка", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5 },
-            { name: "Букварь", adults: true, points: [4,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5 }
+            { name: "Путаница", adults: true, points: [2,1,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Догонялки", adults: false, points: [7,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Викторина", adults: true, points: [4,2,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Котячий патруль", adults: true, points: [20,15,7], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1, reportMultiplier: 3 },
+            { name: "Поле чудес", adults: true, points: [10,5,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Липучки", adults: false, points: [4,2,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Составь слово", adults: false, points: [4,2,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Расшифруй", adults: true, points: [], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Займи клетку", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Погоня", adults: false, points: [5,2,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Облом", adults: false, points: [4,1,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Лабиринт", adults: true, points: [5,3,1,0], rounds: 3, canBeSolo: true, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Охота на бабочек", adults: false, points: [], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1, reportMultiplier: 3 },
+            { name: "Три буквы", adults: true, points: [3,1,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Клановое имя", adults: true, points: [3,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Цель", adults: false, points: [5,3,1,0], rounds: 3, canBeSolo: true, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Словарик", adults: false, points: [4,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Песочница", adults: true, points: [], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1, reportMultiplier: 3 },
+            { name: "Три факта", adults: true, points: [5,3,0], rounds: 3, canBeSolo: false, isSpecial: false, normRounds: 3, reportMultiplier: 1 },
+            { name: "Дай Пять", adults: true, points: [15,7,0], rounds: 3, canBeSolo: false, isSpecial: true, normRounds: 3, reportMultiplier: 3 },
+            { name: "Кладоискатели", adults: false, points: [20,10,0], rounds: 1, canBeSolo: true, isSpecial: true, normRounds: 1, reportMultiplier: 3 },
+            { name: "Считалочка", adults: true, points: [5,3,0], rounds: 5, canBeSolo: false, isSpecial: false, normRounds: 5, reportMultiplier: 1 },
+            { name: "Букварь", adults: true, points: [4,0], rounds: 5, canBeSolo: true, isSpecial: false, normRounds: 5, reportMultiplier: 1 }
         ];
 
         function generateId() {
@@ -472,12 +475,19 @@
                         if (session.selectedGame) {
                             const game = session.selectedGame;
                             const roundsCount = session.rounds.length;
+                            
+                            // Для специальных игр: считаем количество "комплектов" и умножаем на множитель
                             if (game.isSpecial) {
-                                const score = roundsCount * 3;
-                                if (score > 0) gameTotals[game.name] = (gameTotals[game.name] || 0) + score;
+                                const baseScore = Math.floor(roundsCount / game.normRounds);
+                                const score = baseScore * game.reportMultiplier;
+                                if (score > 0) {
+                                    gameTotals[game.name] = (gameTotals[game.name] || 0) + score;
+                                }
                             } else {
                                 const fullSets = Math.floor(roundsCount / game.normRounds);
-                                if (fullSets > 0) gameTotals[game.name] = (gameTotals[game.name] || 0) + fullSets;
+                                if (fullSets > 0) {
+                                    gameTotals[game.name] = (gameTotals[game.name] || 0) + fullSets;
+                                }
                             }
                         }
                     });
