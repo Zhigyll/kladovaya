@@ -328,7 +328,8 @@
                                     </div>
                                     <div v-for="player in getPlayersForGame(gameSession.selectedGame)" :key="player.id" class="player-point-row">
                                         <span class="player-name">{{ player.name || 'Без имени' }} ({{ player.playerId || '—' }})</span>
-                                        <select v-if="gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
+                                        <!-- Проверка: если игра "Путаница" — ручной ввод, иначе выпадающий список если есть points -->
+                                        <select v-if="gameSession.selectedGame.name !== 'Путаница' && gameSession.selectedGame.points && gameSession.selectedGame.points.length" v-model="round.points[player.id]">
                                             <option :value="null">—</option>
                                             <option v-for="point in gameSession.selectedGame.points" :value="point">{{ point }}</option>
                                             <option value="0">0</option>
@@ -485,6 +486,7 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
+                    // Подсчёт баллов котят (из введённых данных)
                     const kittenScores = {};
                     players.value.forEach(p => kittenScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -502,6 +504,7 @@
                         }
                     });
                     
+                    // Распределение баллов взрослых только между котятами
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
@@ -528,6 +531,7 @@
                         }
                     });
                     
+                    // Посещённые игры для ИС
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -547,6 +551,7 @@
                         }
                     });
                     
+                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             const totalPoints = Math.round(kittenScores[player.id] || 0);
@@ -555,6 +560,7 @@
                         }
                     });
                     
+                    // БС
                     const bsScores = {};
                     players.value.forEach(p => bsScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -576,6 +582,7 @@
                         }
                     });
                     
+                    // ИС
                     const isScores = {};
                     players.value.forEach(p => isScores[p.id] = 0);
                     gameSessions.value.forEach(session => {
