@@ -335,11 +335,14 @@
                         }
                     });
                     
+                    // ИС получают количество полных комплектов (fullSets) за игру
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             const game = session.selectedGame;
+                            const fullSets = Math.floor(session.rounds.length / game.normRounds);
+                            if (fullSets === 0) return;
                             const isPlayers = new Set();
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
@@ -347,7 +350,7 @@
                                 }
                             });
                             isPlayers.forEach(pid => {
-                                isVisitedGames[pid] = (isVisitedGames[pid] || 0) + (game.reportScore !== null ? 3 : 1);
+                                isVisitedGames[pid] = (isVisitedGames[pid] || 0) + fullSets;
                             });
                         }
                     });
