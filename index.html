@@ -294,40 +294,61 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
+                    // Объекты для хранения баллов всех не-взрослых (реальные + доли взрослых)
                     const kittenScores = {};
-                    players.value.forEach(p => kittenScores[p.id] = 0);
+                    const bsScores = {};
+                    const isScores = {};
+                    players.value.forEach(p => {
+                        kittenScores[p.id] = 0;
+                        bsScores[p.id] = 0;
+                        isScores[p.id] = 0;
+                    });
+                    
+                    // 1. Собираем реальные баллы из раундов для котят (остальные будут позже)
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
                                     if (score > 0) {
                                         const player = players.value.find(p => p.id === pid);
-                                        if (player && player.type === 'kitten') kittenScores[pid] = (kittenScores[pid] || 0) + score;
+                                        if (player && player.type === 'kitten') {
+                                            kittenScores[pid] = (kittenScores[pid] || 0) + score;
+                                        }
                                     }
                                 }
                             });
                         }
                     });
                     
+                    // 2. Распределение баллов взрослых между ВСЕМИ не-взрослыми (котята, БС, ИС)
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
                                 const adultsInRound = [];
-                                const kittensInRound = [];
+                                const nonAdultsInRound = [];
                                 for (let [pid, score] of Object.entries(round.points)) {
                                     if (score > 0) {
                                         const player = players.value.find(p => p.id === pid);
                                         if (player) {
-                                            if (player.type === 'adult') adultsInRound.push({ pid, score });
-                                            else if (player.type === 'kitten') kittensInRound.push(pid);
+                                            if (player.type === 'adult') {
+                                                adultsInRound.push({ pid, score });
+                                            } else if (player.type === 'kitten' || player.type === 'bs' || player.type === 'is') {
+                                                nonAdultsInRound.push({ pid, type: player.type });
+                                            }
                                         }
                                     }
                                 }
-                                if (adultsInRound.length > 0 && kittensInRound.length > 0) {
+                                if (adultsInRound.length > 0 && nonAdultsInRound.length > 0) {
                                     adultsInRound.forEach(adult => {
-                                        const pointsPerKitten = Math.floor(adult.score / kittensInRound.length);
-                                        kittensInRound.forEach(kidPid => {
-                                            kittenScores[kidPid] = (kittenScores[kidPid] || 0) + pointsPerKitten;
+                                        const pointsPerNonAdult = Math.floor(adult.score / nonAdultsInRound.length);
+                                        nonAdultsInRound.forEach(({ pid, type }) => {
+                                            if (type === 'kitten') {
+                                                kittenScores[pid] = (kittenScores[pid] || 0) + pointsPerNonAdult;
+                                            } else if (type === 'bs') {
+                                                bsScores[pid] = (bsScores[pid] || 0) + pointsPerNonAdult;
+                                            } else if (type === 'is') {
+                                                isScores[pid] = (isScores[pid] || 0) + pointsPerNonAdult;
+                                            }
                                         });
                                     });
                                 }
@@ -335,7 +356,24 @@
                         }
                     });
                     
-                    // ИС получают количество полных комплектов (fullSets) за игру
+                    // 3. Добавляем реальные баллы для БС и ИС (к уже имеющимся)
+                    gameSessions.value.forEach(session => {
+                        if (session.selectedGame) {
+                            session.rounds.forEach(round => {
+                                for (let [pid, score] of Object.entries(round.points)) {
+                                    if (score > 0) {
+                                        const player = players.value.find(p => p.id === pid);
+                                        if (player) {
+                                            if (player.type === 'bs') bsScores[pid] = (bsScores[pid] || 0) + score;
+                                            else if (player.type === 'is') isScores[pid] = (isScores[pid] || 0) + score;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    // 4. Посещённые игры для ИС (полные комплекты)
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -346,7 +384,9 @@
                             const isPlayers = new Set();
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') isPlayers.add(pid);
+                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
+                                        isPlayers.add(pid);
+                                    }
                                 }
                             });
                             isPlayers.forEach(pid => {
@@ -355,6 +395,8 @@
                         }
                     });
                     
+                    // 5. Формируем строки отчёта
+                    // Котята
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
                             const totalPoints = Math.round(kittenScores[player.id] || 0);
@@ -363,17 +405,7 @@
                         }
                     });
                     
-                    const bsScores = {};
-                    players.value.forEach(p => bsScores[p.id] = 0);
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame) {
-                            session.rounds.forEach(round => {
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'bs') bsScores[pid] = (bsScores[pid] || 0) + score;
-                                }
-                            });
-                        }
-                    });
+                    // БС
                     players.value.forEach(player => {
                         if (player.type === 'bs') {
                             const totalPoints = Math.round(bsScores[player.id] || 0);
@@ -382,17 +414,7 @@
                         }
                     });
                     
-                    const isScores = {};
-                    players.value.forEach(p => isScores[p.id] = 0);
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame) {
-                            session.rounds.forEach(round => {
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') isScores[pid] = (isScores[pid] || 0) + score;
-                                }
-                            });
-                        }
-                    });
+                    // ИС
                     players.value.forEach(player => {
                         if (player.type === 'is') {
                             const totalPoints = Math.round(isScores[player.id] || 0);
