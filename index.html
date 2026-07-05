@@ -294,156 +294,62 @@
                     lines.push(`Игра: ${gameLines.join(', ')}`);
                     lines.push(`Котята:`);
                     
-                    // --- Сбор реальных баллов для котят (как было в оригинале) ---
-                    const kittenScores = {};
-                    players.value.forEach(p => kittenScores[p.id] = 0);
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame) {
-                            session.rounds.forEach(round => {
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0) {
-                                        const player = players.value.find(p => p.id === pid);
-                                        if (player && player.type === 'kitten') kittenScores[pid] = (kittenScores[pid] || 0) + score;
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    // --- РАСПРЕДЕЛЕНИЕ ВЗРОСЛЫХ МЕЖДУ ВСЕМИ НЕ-ВЗРОСЛЫМИ (котята, БС, ИС) ---
-                    // Это ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ по сравнению с оригиналом
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame) {
-                            session.rounds.forEach(round => {
-                                const adultsInRound = [];
-                                const nonAdultsInRound = []; // теперь собираем всех: котят, БС, ИС
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0) {
-                                        const player = players.value.find(p => p.id === pid);
-                                        if (player) {
-                                            if (player.type === 'adult') {
-                                                adultsInRound.push({ pid, score });
-                                            } else if (player.type === 'kitten' || player.type === 'bs' || player.type === 'is') {
-                                                nonAdultsInRound.push({ pid, type: player.type });
-                                            }
-                                        }
-                                    }
-                                }
-                                if (adultsInRound.length > 0 && nonAdultsInRound.length > 0) {
-                                    adultsInRound.forEach(adult => {
-                                        const pointsPerNonAdult = Math.floor(adult.score / nonAdultsInRound.length);
-                                        nonAdultsInRound.forEach(({ pid, type }) => {
-                                            // добавляем в соответствующий объект
-                                            if (type === 'kitten') {
-                                                kittenScores[pid] = (kittenScores[pid] || 0) + pointsPerNonAdult;
-                                            } else if (type === 'bs') {
-                                                // пока добавим в отдельный объект, потом сложим с реальными
-                                                // но чтобы не усложнять, создадим отдельные для распределения
-                                                // Однако в оригинале были отдельные объекты для bs и is, я их сохраню.
-                                                // Поэтому я создам временные переменные для долей и добавлю позже.
-                                                // Но для простоты я сразу добавлю в bsScores и isScores, которые потом суммирую с реальными.
-                                                // Для этого нужно иметь доступ к bsScores и isScores, которые объявлены ниже.
-                                                // Так как они объявлены позже, я перенесу их объявление выше.
-                                                // Перепишу: объявлю bsScores и isScores до этого блока.
-                                            }
-                                        });
-                                    });
-                                }
-                            });
-                        }
-                    });
-                    
-                    // --- Сбор реальных баллов для БС и ИС (как было в оригинале) ---
-                    const bsScores = {};
-                    const isScores = {};
-                    players.value.forEach(p => { bsScores[p.id] = 0; isScores[p.id] = 0; });
-                    
-                    // Сначала добавим реальные баллы из раундов
-                    gameSessions.value.forEach(session => {
-                        if (session.selectedGame) {
-                            session.rounds.forEach(round => {
-                                for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0) {
-                                        const player = players.value.find(p => p.id === pid);
-                                        if (player) {
-                                            if (player.type === 'bs') bsScores[pid] = (bsScores[pid] || 0) + score;
-                                            else if (player.type === 'is') isScores[pid] = (isScores[pid] || 0) + score;
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    });
-                    
-                    // Теперь добавим доли от взрослых в bsScores и isScores (они ещё не добавлены)
-                    // Для этого пересчитаем распределение ещё раз, но теперь будем добавлять в bsScores и isScores.
-                    // Чтобы не дублировать код, я перепишу блок распределения так, чтобы он сразу добавлял в нужные объекты.
-                    // Но проще: я создам отдельные объекты для долей и потом прибавлю.
-                    // Давайте переделаем: сначала объявим bsScores и isScores, затем в блоке распределения будем добавлять в них.
-                    // Перенесу объявление bsScores и isScores в начало, перед распределением.
-                    
-                    // ---- ПЕРЕПИСЫВАЮ ВЕСЬ БЛОК ЗАНОВО ----
-                    // Чтобы избежать путаницы, я просто перепишу логику в одном месте.
-                    
-                    // Сначала создадим объекты для всех не-взрослых
-                    const allScores = { kitten: {}, bs: {}, is: {} };
+                    // Создаём объекты для хранения итоговых баллов всех не-взрослых
+                    const finalScores = {};
                     players.value.forEach(p => {
-                        if (p.type === 'kitten') allScores.kitten[p.id] = 0;
-                        else if (p.type === 'bs') allScores.bs[p.id] = 0;
-                        else if (p.type === 'is') allScores.is[p.id] = 0;
+                        if (p.type !== 'adult') finalScores[p.id] = 0;
                     });
-                    
-                    // 1. Собираем реальные баллы для всех не-взрослых
+
+                    // Шаг 1: Собираем реальные баллы всех не-взрослых из всех раундов
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
                                     if (score > 0) {
                                         const player = players.value.find(p => p.id === pid);
-                                        if (player) {
-                                            if (player.type === 'kitten') allScores.kitten[pid] = (allScores.kitten[pid] || 0) + score;
-                                            else if (player.type === 'bs') allScores.bs[pid] = (allScores.bs[pid] || 0) + score;
-                                            else if (player.type === 'is') allScores.is[pid] = (allScores.is[pid] || 0) + score;
+                                        if (player && player.type !== 'adult') {
+                                            finalScores[pid] = (finalScores[pid] || 0) + score;
                                         }
                                     }
                                 }
                             });
                         }
                     });
-                    
-                    // 2. Распределяем взрослые баллы между всеми не-взрослыми
+
+                    // Шаг 2: Для каждой сессии (игры) суммируем баллы взрослых и распределяем между всеми не-взрослыми участниками этой сессии
                     gameSessions.value.forEach(session => {
                         if (session.selectedGame) {
+                            // Суммируем баллы взрослых за все раунды этой сессии
+                            let totalAdultScore = 0;
+                            // Множество ID не-взрослых, участвовавших в этой сессии (имеют >0 баллов в любом раунде)
+                            const nonAdultParticipants = new Set();
+
                             session.rounds.forEach(round => {
-                                const adultsInRound = [];
-                                const nonAdultsInRound = [];
                                 for (let [pid, score] of Object.entries(round.points)) {
                                     if (score > 0) {
                                         const player = players.value.find(p => p.id === pid);
                                         if (player) {
                                             if (player.type === 'adult') {
-                                                adultsInRound.push({ pid, score });
-                                            } else if (player.type === 'kitten' || player.type === 'bs' || player.type === 'is') {
-                                                nonAdultsInRound.push({ pid, type: player.type });
+                                                totalAdultScore += score;
+                                            } else {
+                                                nonAdultParticipants.add(pid);
                                             }
                                         }
                                     }
                                 }
-                                if (adultsInRound.length > 0 && nonAdultsInRound.length > 0) {
-                                    adultsInRound.forEach(adult => {
-                                        const pointsPerNonAdult = Math.floor(adult.score / nonAdultsInRound.length);
-                                        nonAdultsInRound.forEach(({ pid, type }) => {
-                                            if (type === 'kitten') allScores.kitten[pid] = (allScores.kitten[pid] || 0) + pointsPerNonAdult;
-                                            else if (type === 'bs') allScores.bs[pid] = (allScores.bs[pid] || 0) + pointsPerNonAdult;
-                                            else if (type === 'is') allScores.is[pid] = (allScores.is[pid] || 0) + pointsPerNonAdult;
-                                        });
-                                    });
-                                }
                             });
+
+                            // Если есть взрослые баллы и есть не-взрослые участники, делим поровну
+                            if (totalAdultScore > 0 && nonAdultParticipants.size > 0) {
+                                const share = Math.floor(totalAdultScore / nonAdultParticipants.size);
+                                nonAdultParticipants.forEach(pid => {
+                                    finalScores[pid] = (finalScores[pid] || 0) + share;
+                                });
+                            }
                         }
                     });
-                    
-                    // 3. Посещённые игры для ИС (без изменений)
+
+                    // Шаг 3: Посещённые игры для ИС (полные комплекты)
                     const isVisitedGames = {};
                     players.value.forEach(p => isVisitedGames[p.id] = 0);
                     gameSessions.value.forEach(session => {
@@ -454,7 +360,9 @@
                             const isPlayers = new Set();
                             session.rounds.forEach(round => {
                                 for (let [pid, score] of Object.entries(round.points)) {
-                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') isPlayers.add(pid);
+                                    if (score > 0 && players.value.find(p => p.id === pid)?.type === 'is') {
+                                        isPlayers.add(pid);
+                                    }
                                 }
                             });
                             isPlayers.forEach(pid => {
@@ -462,33 +370,33 @@
                             });
                         }
                     });
-                    
-                    // 4. Вывод отчёта
+
+                    // Шаг 4: Формируем строки отчёта
                     players.value.forEach(player => {
                         if (player.type === 'kitten') {
-                            const totalPoints = Math.round(allScores.kitten[player.id] || 0);
+                            const totalPoints = Math.round(finalScores[player.id] || 0);
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints})`);
                         }
                     });
-                    
+
                     players.value.forEach(player => {
                         if (player.type === 'bs') {
-                            const totalPoints = Math.round(allScores.bs[player.id] || 0);
+                            const totalPoints = Math.round(finalScores[player.id] || 0);
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}) [БС]`);
                         }
                     });
-                    
+
                     players.value.forEach(player => {
                         if (player.type === 'is') {
-                            const totalPoints = Math.round(allScores.is[player.id] || 0);
+                            const totalPoints = Math.round(finalScores[player.id] || 0);
                             const visited = isVisitedGames[player.id] || 0;
                             const catID = player.playerId ? `cat${player.playerId}` : 'catID';
                             lines.push(`${player.playerId || 'ID'} | [${catID}] (${totalPoints}; ${visited}) [ИС]`);
                         }
                     });
-                    
+
                     return lines.join('\n');
                 });
 
